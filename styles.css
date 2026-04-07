@@ -86,6 +86,7 @@ body.dark-mode {
 .container {
   max-width: 1160px;
   margin: 0 auto;
+  width: 100%;
   padding: 24px;
   padding-top: 56px;
 }
@@ -389,10 +390,11 @@ p { margin: 8px 0; }
 .person-controls {
   display: flex;
   gap: 8px;
-  min-width: 460px;
+  min-width: 0;
   align-items: center;
   justify-content: flex-end;
   flex-wrap: wrap;
+  flex: 1 1 auto;
 }
 
 #go-people {
@@ -518,6 +520,7 @@ ul { list-style: none; margin: 0 0 12px; padding: 0; }
 
 .table-wrap {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid var(--line);
   border-radius: 12px;
 }
@@ -583,39 +586,69 @@ h3 {
 }
 
 @media (max-width: 760px) {
-  .container { padding: 14px; }
+  .container {
+    padding: 12px;
+    padding-top: 52px;
+  }
+
   .panel { border-radius: 14px; padding: 14px; }
 
   .topbar,
-  .person-switch,
-  .person-controls {
+  .person-switch {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .app-nav,
+  .brand {
+    align-items: center;
+  }
+
+  .app-nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .app-nav #auth-user-label,
+  .app-nav #logout-btn {
+    grid-column: 1 / -1;
+  }
+
   .person-controls,
   .salary-form,
   .row-2,
   .row-3,
   .grid,
   .kpi-grid,
-  .debt-totals {
+  .debt-totals,
+  .section-tools {
+    display: grid;
     grid-template-columns: 1fr;
     width: 100%;
   }
 
   .panel-head { align-items: flex-start; }
 
-  .section-tools { width: 100%; }
-  .section-tools > * { width: 100%; }
+  .section-tools > * {
+    width: 100%;
+    min-width: 0;
+  }
 
   .inline-check {
     width: 100%;
     justify-content: flex-start;
   }
 
-  button { width: 100%; }
+  .person-controls #go-people {
+    min-width: 0;
+  }
+
+  button,
+  select,
+  input {
+    width: 100%;
+  }
+
   .actions { flex-direction: column; }
 }
 
@@ -623,6 +656,9 @@ h3 {
   h1 { font-size: 1.35rem; }
   .brand-logo { width: 44px; height: 44px; }
   .kpi-card strong { font-size: 1rem; }
+  .app-nav {
+    grid-template-columns: 1fr;
+  }
 
   th,
   td {
