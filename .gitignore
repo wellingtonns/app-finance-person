@@ -1,0 +1,12 @@
+﻿# Local env / editor
+.vscode/
+.idea/
+*.log
+*.tmp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build/runtime
+node_modules/

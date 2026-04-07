@@ -1,0 +1,292 @@
+﻿<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Controle de Gastos</title>
+  <link rel="stylesheet" href="styles.css?v=20260407-2118" />
+</head>
+<body>
+  <div class="bg-orb bg-orb-1"></div>
+  <div class="bg-orb bg-orb-2"></div>
+  <label class="theme-switch" title="Alternar tema">
+    <input id="theme-toggle" type="checkbox" />
+    <span class="slider"></span>
+  </label>
+
+  <main id="app-shell" class="container">
+    <header class="topbar panel reveal">
+      <div class="brand">
+        <img src="logo-financeperson.svg" alt="Logo FinancePerson" class="brand-logo" />
+        <div>
+          <h1>FinancePerson</h1>
+          <p id="current-month-badge">Painel do mês atual</p>
+        </div>
+      </div>
+      <nav class="app-nav">
+        <button id="nav-dashboard" type="button">Dashboard</button>
+        <button id="nav-accounts" class="secondary" type="button">Contas</button>
+        <button id="nav-people" class="secondary" type="button">Capital</button>
+        <button id="nav-investments" class="secondary" type="button">Investimentos</button>
+        <span id="auth-user-label" class="list-meta"></span>
+        <button id="logout-btn" class="secondary" type="button">Sair</button>
+      </nav>
+    </header>
+
+    <section id="view-dashboard" class="view reveal">
+      <section class="panel person-switch">
+        <div>
+          <h2 id="dashboard-month-label">Mês atual</h2>
+          <p>Dashboard de visualização por pessoa e mês atual.</p>
+          <p id="combined-mode-note" class="list-meta"></p>
+        </div>
+        <div class="person-controls">
+          <select id="active-person-select"></select>
+          <label class="inline-check">
+            <input id="use-combined-salaries" type="checkbox" />
+            Somar salários marcados
+          </label>
+          <label class="inline-check">
+            <input id="use-all-debts" type="checkbox" />
+            Consolidar dívidas do casal
+          </label>
+          <button id="go-people" class="secondary" type="button">Gerenciar pessoas</button>
+        </div>
+      </section>
+
+      <section class="kpi-grid reveal">
+        <article class="kpi-card">
+          <span>Renda total</span>
+          <strong id="income-total">R$ 0,00</strong>
+        </article>
+        <article class="kpi-card">
+          <span>Renda total do mês</span>
+          <strong id="income-total-month">R$ 0,00</strong>
+        </article>
+        <article class="kpi-card">
+          <span>Gastos pagos</span>
+          <strong id="paid-out-total">R$ 0,00</strong>
+        </article>
+        <article class="kpi-card kpi-highlight">
+          <span>Saldo geral atual</span>
+          <strong id="balance-total">R$ 0,00</strong>
+        </article>
+      </section>
+
+      <div class="workspace-grid">
+        <section class="panel reveal">
+          <div class="panel-head">
+            <h2>Renda Extra</h2>
+          </div>
+          <ul id="extra-list"></ul>
+          <p>Total renda extra: <strong id="extra-total">R$ 0,00</strong></p>
+        </section>
+
+        <section class="panel reveal">
+          <div class="panel-head">
+            <h2>Lazer</h2>
+            <button id="clear-leisure" class="danger" type="button">Limpar tudo</button>
+          </div>
+          <form id="leisure-form" class="row-3">
+            <input id="leisure-desc" type="text" placeholder="Descrição do lazer" required />
+            <input id="leisure-value" type="number" min="0" step="0.01" placeholder="Valor" required />
+            <button type="submit">Adicionar</button>
+          </form>
+          <ul id="leisure-list"></ul>
+          <p>Total lazer: <strong id="leisure-total">R$ 0,00</strong></p>
+        </section>
+
+        <section class="panel debts-panel reveal">
+          <div class="panel-head">
+            <h2>Dívidas</h2>
+            <div class="section-tools">
+              <label for="debt-scope">Visão</label>
+              <select id="debt-scope">
+                <option value="active">Pessoa selecionada</option>
+                <option value="all">Todas as pessoas</option>
+              </select>
+              <label for="debt-filter">Status</label>
+              <select id="debt-filter">
+                <option value="all">Todas</option>
+                <option value="open">Em aberto</option>
+                <option value="overdue">Atrasadas</option>
+                <option value="paid">Pagas</option>
+              </select>
+              <label for="debt-month-filter">Mês</label>
+              <input id="debt-month-filter" type="month" />
+              <button id="clear-debt-filters" class="secondary" type="button">Limpar filtros</button>
+              <button id="go-accounts" class="secondary" type="button">Gerenciar contas</button>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Pessoa</th>
+                  <th>Nome</th>
+                  <th>Valor</th>
+                  <th>Vencimento</th>
+                  <th>Atraso (dias)</th>
+                  <th>Status</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="debt-list-dashboard"></tbody>
+            </table>
+          </div>
+
+          <div class="debt-totals">
+            <p>Total do mês: <strong id="debt-total-month">R$ 0,00</strong></p>
+            <p>Total geral: <strong id="debt-total">R$ 0,00</strong></p>
+            <p>Total pagas (mês): <strong id="debt-paid-total">R$ 0,00</strong></p>
+            <p>Total em atraso (mês): <strong id="debt-overdue-total">R$ 0,00</strong></p>
+            <p>Total em aberto (mês): <strong id="debt-open-total">R$ 0,00</strong></p>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section id="view-accounts" class="view panel reveal hidden">
+      <div class="panel-head">
+        <h2>Contas</h2>
+        <div class="section-tools">
+          <input id="financeiro-csv-input" type="file" accept=".csv,text/csv" />
+          <input id="financeiro-csv-year" type="number" min="2000" max="2100" step="1" placeholder="Ano (ex: 2026)" />
+          <button id="apply-financeiro-csv" class="secondary" type="button">Aplicar CSV</button>
+          <span id="financeiro-csv-status" class="list-meta"></span>
+          <button id="add-test-debts" class="secondary" type="button">Adicionar teste</button>
+          <button id="clear-debts" class="danger" type="button">Limpar dívidas</button>
+        </div>
+      </div>
+
+      <form id="debt-form" class="grid">
+        <select id="debt-owner-select"></select>
+        <input id="debt-name" type="text" placeholder="Nome da dívida" required />
+        <input id="debt-value" type="number" min="0" step="0.01" placeholder="Valor" required />
+        <input id="debt-due" type="date" required />
+        <button type="submit">Adicionar dívida</button>
+      </form>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Pessoa</th>
+              <th>Nome</th>
+              <th>Valor</th>
+              <th>Vencimento</th>
+              <th>Atraso (dias)</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="debt-list-accounts"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="view-people" class="view panel reveal hidden">
+      <div class="panel-head">
+        <h2>Capital</h2>
+        <p id="people-count">0 pessoas cadastradas</p>
+      </div>
+
+      <form id="person-form" class="row-3">
+        <input id="person-name" type="text" placeholder="Nome da pessoa" required />
+        <input id="person-salary" type="number" min="0" step="0.01" placeholder="Salário inicial" required />
+        <button type="submit">Adicionar pessoa</button>
+      </form>
+      <label class="inline-check">
+        <input id="person-include-combined" type="checkbox" checked />
+        Somar salário desta pessoa no dashboard conjunto
+      </label>
+
+      <hr class="divider" />
+      <h3>Renda Mensal</h3>
+      <p class="list-meta">Salário fixo por pessoa e renda extra flexível por mês (ou recorrente).</p>
+      <div class="row-2">
+        <select id="capital-person-select"></select>
+        <input id="capital-month" type="month" />
+      </div>
+      <form id="capital-salary-form" class="row-2">
+        <input id="capital-salary-input" type="number" min="0" step="0.01" placeholder="Salário fixo da pessoa" required />
+        <button type="submit">Salvar salário fixo</button>
+      </form>
+      <form id="capital-extra-form" class="row-3">
+        <input id="capital-extra-desc" type="text" placeholder="Descrição da renda extra" required />
+        <input id="capital-extra-value" type="number" min="0" step="0.01" placeholder="Valor" required />
+        <button type="submit">Adicionar renda extra</button>
+      </form>
+      <label class="inline-check">
+        <input id="capital-extra-recurring" type="checkbox" />
+        Renda extra recorrente (somar em todos os meses)
+      </label>
+      <button id="clear-capital-extras" class="danger" type="button">Limpar renda extra do mês</button>
+      <ul id="capital-extra-list"></ul>
+
+      <hr class="divider" />
+      <ul id="people-list"></ul>
+    </section>
+
+    <section id="view-investments" class="view panel reveal hidden">
+      <div class="panel-head">
+        <h2>Investimentos</h2>
+        <div class="section-tools">
+          <label for="investment-scope">Visão</label>
+          <select id="investment-scope">
+            <option value="active">Pessoa selecionada</option>
+            <option value="all">Todas as pessoas</option>
+          </select>
+          <label for="investment-owner-select">Pessoa</label>
+          <select id="investment-owner-select"></select>
+        </div>
+      </div>
+
+      <form id="investment-form" class="grid">
+        <input id="investment-name" type="text" placeholder="Nome do investimento" required />
+        <select id="investment-type">
+          <option value="Renda fixa">Renda fixa</option>
+          <option value="Renda variável">Renda variável</option>
+        </select>
+        <input id="investment-value" type="number" min="0" step="0.01" placeholder="Valor aplicado" required />
+        <input id="investment-date" type="date" required />
+        <button type="submit">Adicionar</button>
+      </form>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Pessoa</th>
+              <th>Nome</th>
+              <th>Tipo</th>
+              <th>Valor</th>
+              <th>Data</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="investment-list"></tbody>
+        </table>
+      </div>
+
+      <div class="debt-totals">
+        <p>Total investido: <strong id="investment-total">R$ 0,00</strong></p>
+        <p>Total em carteira: <strong id="investment-active-total">R$ 0,00</strong></p>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js?v=20260407-2128"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
