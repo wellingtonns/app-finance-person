@@ -591,6 +591,19 @@ h3 {
     padding-top: 52px;
   }
 
+  #app-shell,
+  .view,
+  .workspace-grid,
+  .panel,
+  .person-switch,
+  .kpi-card,
+  .table-wrap,
+  .debt-totals p {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
   .panel { border-radius: 14px; padding: 14px; }
 
   .topbar,
@@ -628,6 +641,11 @@ h3 {
   }
 
   .panel-head { align-items: flex-start; }
+  .panel-head,
+  .brand,
+  .list-row {
+    min-width: 0;
+  }
 
   .section-tools > * {
     width: 100%;
@@ -649,10 +667,25 @@ h3 {
     width: 100%;
   }
 
+  .list-row {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .list-row > * {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  #auth-user-label {
+    overflow-wrap: anywhere;
+  }
+
   .actions { flex-direction: column; }
 }
 
 @media (max-width: 560px) {
+  .panel { padding: 12px; }
   h1 { font-size: 1.35rem; }
   .brand-logo { width: 44px; height: 44px; }
   .kpi-card strong { font-size: 1rem; }
