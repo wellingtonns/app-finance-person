@@ -35,6 +35,10 @@ const financeiroMonthMeta = [
   { key: "11", label: "Novembro", valueIndex: 21, statusIndex: 22 },
   { key: "12", label: "Dezembro", valueIndex: 23, statusIndex: 24 },
 ];
+const remoteStateApiPath = "/api/state";
+let saveSyncTimeout = null;
+let saveSyncInFlight = false;
+let saveSyncQueued = false;
 
 const authState = {
   users: [],
@@ -47,6 +51,63 @@ function sanitizeUsername(value) {
 
 function getScopedStorageKey() {
   return authState.currentUser ? `${storageKey}:${authState.currentUser}` : storageKey;
+}
+
+function getRemoteUser() {
+  return sanitizeUsername(authState.currentUser || "principal") || "principal";
+}
+
+function buildRemoteStateUrl() {
+  const url = new URL(remoteStateApiPath, window.location.origin);
+  url.searchParams.set("user", getRemoteUser());
+  return url.toString();
+}
+
+async function pushStateToServer(snapshot) {
+  const response = await fetch(buildRemoteStateUrl(), {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ state: snapshot }),
+  });
+  if (!response.ok) {
+    throw new Error(`Falha ao salvar no servidor: ${response.status}`);
+  }
+}
+
+async function fetchRemoteState() {
+  try {
+    const response = await fetch(buildRemoteStateUrl(), { method: "GET" });
+    if (!response.ok) return null;
+    const payload = await response.json();
+    if (!payload || typeof payload !== "object") return null;
+    if (!payload.state || typeof payload.state !== "object") return null;
+    return payload.state;
+  } catch (error) {
+    console.warn("Nao foi possivel carregar dados do servidor.", error);
+    return null;
+  }
+}
+
+function scheduleRemoteSave() {
+  if (saveSyncTimeout) window.clearTimeout(saveSyncTimeout);
+  saveSyncTimeout = window.setTimeout(async () => {
+    if (saveSyncInFlight) {
+      saveSyncQueued = true;
+      return;
+    }
+
+    saveSyncInFlight = true;
+    try {
+      do {
+        saveSyncQueued = false;
+        await pushStateToServer(state);
+      } while (saveSyncQueued);
+    } catch (error) {
+      console.warn("Nao foi possivel sincronizar no servidor.", error);
+    } finally {
+      saveSyncInFlight = false;
+    }
+  }, 250);
 }
 
 function loadUsers() {
@@ -428,8 +489,25 @@ function getEffectiveSalary(person) {
   return getPersonSalary(person);
 }
 
+function applyLoadedState(data) {
+  state.people = Array.isArray(data.people) ? data.people.map((person) => normalizePerson(person)) : [];
+  state.activePersonId = data.activePersonId || null;
+  state.debtScope = ["active", "all"].includes(data.debtScope) ? data.debtScope : "active";
+  state.debtFilter = ["all", "open", "overdue", "paid"].includes(data.debtFilter) ? data.debtFilter : "all";
+  state.debtMonthFilter = /^\d{4}-\d{2}$/.test(data.debtMonthFilter) ? data.debtMonthFilter : "";
+  state.investmentScope = ["active", "all"].includes(data.investmentScope) ? data.investmentScope : "active";
+  state.currentView = ["dashboard", "accounts", "people", "investments"].includes(data.currentView) ? data.currentView : "dashboard";
+  state.useCombinedSalaries = Boolean(data.useCombinedSalaries);
+  state.capitalMonth = /^\d{4}-\d{2}$/.test(data.capitalMonth) ? data.capitalMonth : getCurrentMonthKey();
+  state.darkMode = Boolean(data.darkMode);
+  state.appliedTemplates = {
+    financeiro2026: Boolean(data.appliedTemplates && data.appliedTemplates.financeiro2026),
+  };
+}
+
 function save() {
   localStorage.setItem(getScopedStorageKey(), JSON.stringify(state));
+  scheduleRemoteSave();
 }
 
 function load() {
@@ -437,19 +515,7 @@ function load() {
   if (saved) {
     try {
       const data = JSON.parse(saved);
-      state.people = Array.isArray(data.people) ? data.people.map((person) => normalizePerson(person)) : [];
-      state.activePersonId = data.activePersonId || null;
-      state.debtScope = ["active", "all"].includes(data.debtScope) ? data.debtScope : "active";
-      state.debtFilter = ["all", "open", "overdue", "paid"].includes(data.debtFilter) ? data.debtFilter : "all";
-      state.debtMonthFilter = /^\d{4}-\d{2}$/.test(data.debtMonthFilter) ? data.debtMonthFilter : "";
-      state.investmentScope = ["active", "all"].includes(data.investmentScope) ? data.investmentScope : "active";
-      state.currentView = ["dashboard", "accounts", "people", "investments"].includes(data.currentView) ? data.currentView : "dashboard";
-      state.useCombinedSalaries = Boolean(data.useCombinedSalaries);
-      state.capitalMonth = /^\d{4}-\d{2}$/.test(data.capitalMonth) ? data.capitalMonth : getCurrentMonthKey();
-      state.darkMode = Boolean(data.darkMode);
-      state.appliedTemplates = {
-        financeiro2026: Boolean(data.appliedTemplates && data.appliedTemplates.financeiro2026),
-      };
+      applyLoadedState(data);
       if (ensureBasePeopleSalaries()) save();
       return;
     } catch {
@@ -1267,6 +1333,16 @@ async function bootstrap() {
     setupEvents();
     load();
     render();
+
+    const remoteState = await fetchRemoteState();
+    if (remoteState) {
+      applyLoadedState(remoteState);
+      ensureBasePeopleSalaries();
+      localStorage.setItem(getScopedStorageKey(), JSON.stringify(state));
+      render();
+    } else {
+      scheduleRemoteSave();
+    }
   } catch (error) {
     console.error("Falha ao abrir dashboard. Reiniciando estado local.", error);
     localStorage.removeItem(getScopedStorageKey());
