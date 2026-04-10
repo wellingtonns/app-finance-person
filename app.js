@@ -563,8 +563,22 @@ function load() {
 
 function setView(view) {
   state.currentView = view;
+  closeMobileMenu();
   save();
   render();
+}
+
+function isMobileViewport() {
+  return window.matchMedia("(max-width: 1080px)").matches;
+}
+
+function closeMobileMenu() {
+  document.body.classList.remove("menu-open");
+}
+
+function toggleMobileMenu() {
+  if (!isMobileViewport()) return;
+  document.body.classList.toggle("menu-open");
 }
 
 function renderView() {
@@ -991,6 +1005,17 @@ function handleDebtAction(event) {
 }
 
 function setupEvents() {
+  const mobileMenuBtn = document.getElementById("mobile-menu-btn");
+  const mobileMenuOverlay = document.getElementById("mobile-menu-overlay");
+  if (mobileMenuBtn) mobileMenuBtn.addEventListener("click", toggleMobileMenu);
+  if (mobileMenuOverlay) mobileMenuOverlay.addEventListener("click", closeMobileMenu);
+  window.addEventListener("resize", () => {
+    if (!isMobileViewport()) closeMobileMenu();
+  });
+  window.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeMobileMenu();
+  });
+
   document.getElementById("logout-btn").addEventListener("click", () => {
     clearCurrentUser();
     window.location.assign("index.html");

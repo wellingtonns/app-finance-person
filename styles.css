@@ -699,3 +699,242 @@ h3 {
     padding: 8px 6px;
   }
 }
+
+/* Modern shell layout: sidebar + content */
+body {
+  background: radial-gradient(circle at 10% 10%, #dbf9ef 0%, #e9f4ff 45%, #f4f8fb 100%);
+}
+
+body.dark-mode {
+  background: radial-gradient(circle at 10% 10%, #173033 0%, #101c27 45%, #0d151f 100%);
+}
+
+.app-shell {
+  max-width: 1320px;
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  align-items: start;
+  gap: 18px;
+}
+
+.content-area {
+  min-width: 0;
+  display: grid;
+  gap: 16px;
+}
+
+.topbar {
+  position: sticky;
+  top: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 16px;
+  min-height: calc(100dvh - 34px);
+  padding: 16px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(242, 251, 255, 0.8) 100%);
+  box-shadow: 0 18px 40px rgba(16, 46, 60, 0.12);
+}
+
+body.dark-mode .topbar {
+  background: linear-gradient(180deg, rgba(21, 31, 42, 0.94) 0%, rgba(17, 25, 35, 0.9) 100%);
+}
+
+.topbar .brand {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 12px;
+}
+
+.topbar .brand-logo {
+  width: 58px;
+  height: 58px;
+  border-radius: 12px;
+}
+
+.topbar .brand h1 {
+  font-size: 1.35rem;
+}
+
+.topbar .brand p {
+  margin-top: 3px;
+  font-size: 0.85rem;
+}
+
+.app-nav {
+  display: grid;
+  gap: 8px;
+}
+
+.app-nav button {
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+}
+
+.app-nav button.secondary {
+  background: linear-gradient(135deg, #1e6bcb 0%, #0f4f98 100%);
+}
+
+.app-nav button.active {
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 8px 18px rgba(20, 35, 61, 0.22);
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  display: grid;
+  gap: 8px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+.sidebar-footer #auth-user-label {
+  display: block;
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+}
+
+.theme-switch {
+  right: 20px;
+  top: 14px;
+  z-index: 60;
+}
+
+.mobile-menu-btn,
+.mobile-menu-overlay {
+  display: none;
+}
+
+.view.panel {
+  border-radius: 20px;
+}
+
+.person-switch,
+.kpi-card,
+.debt-totals p,
+.table-wrap,
+.view.panel {
+  box-shadow: 0 12px 26px rgba(14, 37, 55, 0.08);
+}
+
+body.dark-mode .kpi-highlight {
+  background: linear-gradient(135deg, #19989f 0%, #116a72 100%);
+}
+
+.kpi-card {
+  border-radius: 16px;
+}
+
+input,
+button,
+select {
+  min-height: 42px;
+}
+
+@media (max-width: 1080px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .topbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: min(78vw, 320px);
+    height: 100dvh;
+    min-height: 100dvh;
+    margin: 0;
+    border-radius: 0 18px 18px 0;
+    transform: translateX(-105%);
+    transition: transform 0.28s ease;
+    z-index: 70;
+    overflow-y: auto;
+  }
+
+  body.menu-open .topbar {
+    transform: translateX(0);
+  }
+
+  .mobile-menu-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: calc(10px + env(safe-area-inset-top));
+    left: 12px;
+    z-index: 80;
+    height: 38px;
+    min-height: 38px;
+    width: auto;
+    padding: 0 12px;
+    border-radius: 11px;
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    background: rgba(11, 38, 61, 0.78);
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 700;
+    backdrop-filter: blur(10px);
+  }
+
+  body.dark-mode .mobile-menu-btn {
+    background: rgba(10, 18, 28, 0.88);
+  }
+
+  .mobile-menu-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 65;
+    background: rgba(6, 16, 27, 0.44);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+
+  body.menu-open .mobile-menu-overlay {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .container {
+    padding-top: calc(56px + env(safe-area-inset-top));
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .content-area {
+    gap: 12px;
+  }
+
+  .view.panel,
+  .panel {
+    border-radius: 14px;
+  }
+
+  .app-nav {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .debt-totals {
+    grid-template-columns: 1fr;
+  }
+
+  .section-tools > * {
+    width: 100%;
+  }
+
+  .table-wrap {
+    border-radius: 10px;
+  }
+}
