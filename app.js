@@ -39,6 +39,7 @@ const remoteStateApiPath = "/api/state";
 let saveSyncTimeout = null;
 let saveSyncInFlight = false;
 let saveSyncQueued = false;
+let isHydratingRemoteState = true;
 
 const authState = {
   users: [],
@@ -77,14 +78,14 @@ async function pushStateToServer(snapshot) {
 async function fetchRemoteState() {
   try {
     const response = await fetch(buildRemoteStateUrl(), { method: "GET" });
-    if (!response.ok) return null;
+    if (!response.ok) return undefined;
     const payload = await response.json();
     if (!payload || typeof payload !== "object") return null;
     if (!payload.state || typeof payload.state !== "object") return null;
     return payload.state;
   } catch (error) {
     console.warn("Nao foi possivel carregar dados do servidor.", error);
-    return null;
+    return undefined;
   }
 }
 
@@ -507,7 +508,9 @@ function applyLoadedState(data) {
 
 function save() {
   localStorage.setItem(getScopedStorageKey(), JSON.stringify(state));
-  scheduleRemoteSave();
+  if (!isHydratingRemoteState) {
+    scheduleRemoteSave();
+  }
 }
 
 function load() {
@@ -1335,14 +1338,18 @@ async function bootstrap() {
     render();
 
     const remoteState = await fetchRemoteState();
-    if (remoteState) {
+    if (remoteState && typeof remoteState === "object") {
       applyLoadedState(remoteState);
       ensureBasePeopleSalaries();
       localStorage.setItem(getScopedStorageKey(), JSON.stringify(state));
       render();
-    } else {
+    } else if (remoteState === null) {
+      // Nao existe estado remoto ainda: inicia com o estado local atual.
+      isHydratingRemoteState = false;
       scheduleRemoteSave();
+      return;
     }
+    isHydratingRemoteState = false;
   } catch (error) {
     console.error("Falha ao abrir dashboard. Reiniciando estado local.", error);
     localStorage.removeItem(getScopedStorageKey());
@@ -1350,6 +1357,8 @@ async function bootstrap() {
     authState.currentUser = "principal";
     load();
     render();
+  } finally {
+    isHydratingRemoteState = false;
   }
 }
 
