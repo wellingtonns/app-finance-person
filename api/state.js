@@ -1,4 +1,5 @@
 const statePrefix = "financeperson:state:v1:";
+const sharedScope = "shared";
 
 function sanitizeUser(value) {
   const normalized = String(value || "").trim().toLowerCase();
@@ -38,32 +39,45 @@ async function kvFetch(path, options = {}) {
 }
 
 async function readRemoteState(user) {
-  const key = `${statePrefix}${user}`;
-  const result = await kvFetch(`/get/${encodeURIComponent(key)}`);
-  const raw = result && result.result ? result.result : null;
-  if (!raw) return null;
+  const candidateKeys = user === sharedScope
+    ? [`${statePrefix}${sharedScope}`]
+    : [`${statePrefix}${sharedScope}`, `${statePrefix}${user}`];
 
-  if (typeof raw === "string") {
-    try {
-      return JSON.parse(raw);
-    } catch {
-      return null;
+  for (const key of candidateKeys) {
+    const result = await kvFetch(`/get/${encodeURIComponent(key)}`);
+    const raw = result && result.result ? result.result : null;
+    if (!raw) continue;
+
+    if (typeof raw === "string") {
+      try {
+        return JSON.parse(raw);
+      } catch {
+        continue;
+      }
     }
-  }
 
-  return typeof raw === "object" ? raw : null;
+    if (typeof raw === "object") return raw;
+  }
+  return null;
 }
 
 async function writeRemoteState(user, state) {
-  const key = `${statePrefix}${user}`;
   const payload = {
     state,
     updatedAt: new Date().toISOString(),
   };
-  await kvFetch(`/set/${encodeURIComponent(key)}`, {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
+
+  const keysToWrite = Array.from(
+    new Set([`${statePrefix}${sharedScope}`, `${statePrefix}${user}`])
+  );
+
+  for (const key of keysToWrite) {
+    await kvFetch(`/set/${encodeURIComponent(key)}`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  }
+
   return payload.updatedAt;
 }
 
