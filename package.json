@@ -1,0 +1,10 @@
+{
+  "name": "app-finance-person",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Dashboard financeiro com persistencia remota via Turso no Vercel.",
+  "type": "commonjs",
+  "dependencies": {
+    "@libsql/client": "^0.15.15"
+  }
+}
