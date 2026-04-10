@@ -60,8 +60,10 @@ async function writeRemoteState(user, state) {
     state,
     updatedAt: new Date().toISOString(),
   };
-  const value = encodeURIComponent(JSON.stringify(payload));
-  await kvFetch(`/set/${encodeURIComponent(key)}/${value}`);
+  await kvFetch(`/set/${encodeURIComponent(key)}`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
   return payload.updatedAt;
 }
 
