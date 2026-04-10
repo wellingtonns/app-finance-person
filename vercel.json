@@ -1,1 +1,11 @@
-{"rewrites":[{"source":"/dashboard","destination":"/dashboard.html"}]}
+{
+  "framework": "vite",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "rewrites": [
+    {
+      "source": "/dashboard",
+      "destination": "/dashboard.html"
+    }
+  ]
+}
