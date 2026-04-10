@@ -1332,3 +1332,177 @@ td {
   background: linear-gradient(180deg, #2d85c6 0%, #255d9f 100%);
   border-color: rgba(97, 169, 231, 0.45);
 }
+
+/* Reference refinement */
+.hero-panel {
+  padding: 18px 20px;
+  border-radius: 18px;
+}
+
+.hero-panel h2 {
+  font-size: 1.95rem;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+}
+
+.hero-panel p {
+  max-width: 720px;
+}
+
+.person-controls {
+  gap: 10px;
+}
+
+.person-controls select,
+.person-controls button {
+  min-width: 180px;
+}
+
+.inline-check {
+  min-height: 42px;
+  padding: 0 10px;
+  border: 1px solid rgba(95, 131, 193, 0.36);
+  border-radius: 12px;
+  background: rgba(10, 16, 29, 0.78);
+}
+
+.inline-check input[type="checkbox"] {
+  accent-color: #6aa5ff;
+}
+
+.kpi-card {
+  position: relative;
+  padding: 14px 16px;
+  overflow: hidden;
+}
+
+.kpi-card::after {
+  content: attr(data-icon);
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.7rem;
+  opacity: 0.88;
+}
+
+.kpi-card[data-tone="gold"]::after { color: #ffc85b; }
+.kpi-card[data-tone="blue"]::after { color: #72a8ff; }
+.kpi-card[data-tone="red"]::after { color: #ff6f8e; }
+.kpi-card[data-tone="green"]::after { color: #67de95; }
+
+.earnings-panel,
+.leisure-panel,
+.debt-panel {
+  border-radius: 18px;
+}
+
+.panel-head h2 {
+  font-size: 1.05rem;
+}
+
+.section-summary {
+  margin: 0 0 10px;
+  color: #c0d2ee;
+  font-size: 0.96rem;
+}
+
+.compact-ledger {
+  margin: 0;
+  border: 1px solid rgba(90, 123, 184, 0.36);
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(8, 14, 24, 0.55);
+}
+
+.compact-ledger .list-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 10px 14px;
+  background: rgba(8, 14, 24, 0.72);
+}
+
+.compact-ledger .list-row:nth-child(odd) {
+  background: rgba(14, 21, 35, 0.84);
+}
+
+.compact-ledger-main {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.compact-ledger-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compact-ledger-value {
+  color: #f5f8ff;
+  font-weight: 700;
+}
+
+.leisure-panel .row-3 {
+  grid-template-columns: 1.4fr 0.8fr auto;
+}
+
+.leisure-panel #clear-leisure,
+.leisure-panel .row-3 button {
+  background: linear-gradient(180deg, #d89c18 0%, #bc7f05 100%);
+  border-color: rgba(255, 202, 95, 0.45);
+  color: #251400;
+}
+
+.earnings-panel .compact-ledger,
+.leisure-panel .compact-ledger {
+  min-height: 132px;
+}
+
+.debt-panel .section-tools {
+  gap: 8px;
+}
+
+.debt-panel .section-tools > * {
+  min-height: 38px;
+}
+
+.debt-panel .debt-totals {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.debt-panel .debt-totals p {
+  font-size: 0.95rem;
+}
+
+@media (max-width: 1080px) {
+  .hero-panel h2 {
+    font-size: 1.55rem;
+  }
+}
+
+@media (max-width: 760px) {
+  .hero-panel {
+    padding: 14px;
+  }
+
+  .hero-panel h2 {
+    font-size: 1.3rem;
+  }
+
+  .compact-ledger .list-row,
+  .compact-ledger-main,
+  .leisure-panel .row-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .compact-ledger-label {
+    white-space: normal;
+  }
+}

@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Controle de Gastos</title>
-  <link rel="stylesheet" href="styles.css?v=20260410-3" />
+  <link rel="stylesheet" href="styles.css?v=20260410-6" />
 </head>
 <body>
   <div class="bg-orb bg-orb-1"></div>
@@ -46,7 +46,7 @@
 
     <section class="content-area">
       <section id="view-dashboard" class="view reveal">
-        <section class="panel person-switch">
+        <section class="panel hero-panel person-switch">
           <div>
             <h2 id="dashboard-month-label">Mês atual</h2>
             <p>Dashboard de visualização por pessoa e mês atual.</p>
@@ -67,34 +67,34 @@
         </section>
 
         <section class="kpi-grid reveal">
-          <article class="kpi-card">
+          <article class="kpi-card" data-tone="gold" data-icon="↗">
             <span>Renda total</span>
             <strong id="income-total">R$ 0,00</strong>
           </article>
-          <article class="kpi-card">
+          <article class="kpi-card" data-tone="blue" data-icon="◫">
             <span>Renda total do mês</span>
             <strong id="income-total-month">R$ 0,00</strong>
           </article>
-          <article class="kpi-card">
+          <article class="kpi-card" data-tone="red" data-icon="⌁">
             <span>Gastos pagos</span>
             <strong id="paid-out-total">R$ 0,00</strong>
           </article>
-          <article class="kpi-card kpi-highlight">
+          <article class="kpi-card kpi-highlight" data-tone="green" data-icon="◎">
             <span>Saldo geral atual</span>
             <strong id="balance-total">R$ 0,00</strong>
           </article>
         </section>
 
         <div class="workspace-grid">
-          <section class="panel reveal">
+          <section class="panel reveal earnings-panel">
             <div class="panel-head">
-              <h2>Renda Extra</h2>
+              <h2>Entradas & Ganhos</h2>
             </div>
-            <ul id="extra-list"></ul>
-            <p>Total renda extra: <strong id="extra-total">R$ 0,00</strong></p>
+            <p class="section-summary">Total renda extra: <strong id="extra-total">R$ 0,00</strong></p>
+            <ul id="extra-list" class="compact-ledger"></ul>
           </section>
 
-          <section class="panel reveal">
+          <section class="panel reveal leisure-panel">
             <div class="panel-head">
               <h2>Lazer</h2>
               <button id="clear-leisure" class="danger" type="button">Limpar tudo</button>
@@ -104,11 +104,12 @@
               <input id="leisure-value" type="number" min="0" step="0.01" placeholder="Valor" required />
               <button type="submit">Adicionar</button>
             </form>
-            <ul id="leisure-list"></ul>
+            <p class="section-summary">Total lazer adicionado por mês:</p>
+            <ul id="leisure-list" class="compact-ledger"></ul>
             <p>Total lazer: <strong id="leisure-total">R$ 0,00</strong></p>
           </section>
 
-          <section class="panel debts-panel reveal">
+          <section class="panel debts-panel reveal debt-panel">
             <div class="panel-head">
               <h2>Dívidas</h2>
               <div class="section-tools">
@@ -291,6 +292,6 @@
     </section>
   </main>
 
-  <script src="app.js?v=20260410-5"></script>
+  <script src="app.js?v=20260410-6"></script>
 </body>
 </html>

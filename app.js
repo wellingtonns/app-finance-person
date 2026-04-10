@@ -689,10 +689,13 @@ function renderSimpleList(listId, items, actionPrefix, allowDelete = true) {
   for (const item of items) {
     const li = document.createElement("li");
     li.className = "list-row";
-    li.innerHTML = allowDelete
-      ? `<span>${item.description}: ${money.format(toNumber(item.value))}</span>
-         <button class="danger" type="button" data-action="delete-${actionPrefix}" data-id="${item.id}">Excluir</button>`
-      : `<span>${item.description}: ${money.format(toNumber(item.value))}</span>`;
+    li.innerHTML = `
+      <div class="compact-ledger-main">
+        <span class="compact-ledger-label">${item.description}</span>
+        <strong class="compact-ledger-value">${money.format(toNumber(item.value))}</strong>
+      </div>
+      ${allowDelete ? `<button class="danger" type="button" data-action="delete-${actionPrefix}" data-id="${item.id}">Excluir</button>` : ""}
+    `;
     list.appendChild(li);
   }
 }
