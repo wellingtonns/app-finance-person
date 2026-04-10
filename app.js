@@ -36,10 +36,12 @@ const financeiroMonthMeta = [
   { key: "12", label: "Dezembro", valueIndex: 23, statusIndex: 24 },
 ];
 const remoteStateApiPath = "/api/state";
+const menuPinKey = "financeperson:menu:pinned:v1";
 let saveSyncTimeout = null;
 let saveSyncInFlight = false;
 let saveSyncQueued = false;
 let isHydratingRemoteState = true;
+let isSidebarPinned = true;
 
 const authState = {
   users: [],
@@ -572,13 +574,32 @@ function isMobileViewport() {
   return window.matchMedia("(max-width: 1080px)").matches;
 }
 
+function isSidebarOverlayMode() {
+  return isMobileViewport() || !isSidebarPinned;
+}
+
+function applySidebarPinState() {
+  document.body.classList.toggle("sidebar-unpinned", !isSidebarPinned);
+  const pinButton = document.getElementById("menu-pin-toggle");
+  if (pinButton) {
+    pinButton.textContent = isSidebarPinned ? "Desfixar menu" : "Fixar menu";
+  }
+  if (!isSidebarOverlayMode()) closeMobileMenu();
+}
+
 function closeMobileMenu() {
   document.body.classList.remove("menu-open");
 }
 
 function toggleMobileMenu() {
-  if (!isMobileViewport()) return;
+  if (!isSidebarOverlayMode()) return;
   document.body.classList.toggle("menu-open");
+}
+
+function toggleSidebarPin() {
+  isSidebarPinned = !isSidebarPinned;
+  localStorage.setItem(menuPinKey, isSidebarPinned ? "1" : "0");
+  applySidebarPinState();
 }
 
 function renderView() {
@@ -1005,12 +1026,18 @@ function handleDebtAction(event) {
 }
 
 function setupEvents() {
+  const savedPin = localStorage.getItem(menuPinKey);
+  if (savedPin === "0") isSidebarPinned = false;
+  applySidebarPinState();
+
   const mobileMenuBtn = document.getElementById("mobile-menu-btn");
   const mobileMenuOverlay = document.getElementById("mobile-menu-overlay");
+  const menuPinToggle = document.getElementById("menu-pin-toggle");
   if (mobileMenuBtn) mobileMenuBtn.addEventListener("click", toggleMobileMenu);
   if (mobileMenuOverlay) mobileMenuOverlay.addEventListener("click", closeMobileMenu);
+  if (menuPinToggle) menuPinToggle.addEventListener("click", toggleSidebarPin);
   window.addEventListener("resize", () => {
-    if (!isMobileViewport()) closeMobileMenu();
+    if (!isSidebarOverlayMode()) closeMobileMenu();
   });
   window.addEventListener("keydown", (event) => {
     if (event.key === "Escape") closeMobileMenu();
