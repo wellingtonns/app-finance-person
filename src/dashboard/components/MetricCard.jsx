@@ -20,7 +20,13 @@ const toneMap = {
   success: "border-success/45 bg-[#13271d] text-success",
 };
 
-export default function MetricCard({ title, value, tone }) {
+function formatMetricValue(value, format) {
+  if (format === "number") return new Intl.NumberFormat("pt-BR").format(value);
+  if (format === "text") return String(value);
+  return formatCurrency(value);
+}
+
+export default function MetricCard({ title, value, tone, format = "currency" }) {
   const Icon = iconMap[tone] || WalletCards;
 
   return (
@@ -31,7 +37,7 @@ export default function MetricCard({ title, value, tone }) {
         <div>
           <p className="text-sm font-medium text-copy/80">{title}</p>
           <strong className="mt-2 block font-display text-[1.15rem] font-bold sm:text-[1.85rem]">
-            {formatCurrency(value)}
+            {formatMetricValue(value, format)}
           </strong>
         </div>
         <span className="mt-1 rounded-2xl border border-white/10 bg-black/10 p-2">

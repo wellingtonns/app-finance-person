@@ -9,16 +9,18 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { label: "Dashboard", icon: Home, active: false },
-  { label: "Contas", icon: BriefcaseBusiness, active: true },
-  { label: "Capital", icon: Wallet, active: false },
-  { label: "Investimentos", icon: BadgeDollarSign, active: false },
+  { key: "dashboard", label: "Dashboard", icon: Home },
+  { key: "contas", label: "Contas", icon: BriefcaseBusiness },
+  { key: "capital", label: "Capital", icon: Wallet },
+  { key: "investimentos", label: "Investimentos", icon: BadgeDollarSign },
 ];
 
-function NavButton({ icon: Icon, label, active }) {
+function NavButton({ icon: Icon, label, active, onClick }) {
   return (
     <button
       type="button"
+      onClick={onClick}
+      aria-current={active ? "page" : undefined}
       className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left text-[15px] font-medium transition ${
         active
           ? "border-white/10 bg-white/10 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]"
@@ -31,7 +33,7 @@ function NavButton({ icon: Icon, label, active }) {
   );
 }
 
-export default function Sidebar({ open, onClose, currentUser }) {
+export default function Sidebar({ open, onClose, currentUser, currentView, onNavigate }) {
   return (
     <>
       <button
@@ -71,7 +73,13 @@ export default function Sidebar({ open, onClose, currentUser }) {
 
         <nav className="space-y-2">
           {navItems.map((item) => (
-            <NavButton key={item.label} {...item} />
+            <NavButton
+              key={item.key}
+              icon={item.icon}
+              label={item.label}
+              active={item.key === currentView}
+              onClick={() => onNavigate(item.key)}
+            />
           ))}
         </nav>
 

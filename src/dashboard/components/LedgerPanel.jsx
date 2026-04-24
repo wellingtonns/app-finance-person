@@ -1,4 +1,5 @@
-import { Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { Plus, Trash2, X } from "lucide-react";
 import { formatCurrency } from "../utils";
 
 function LedgerRow({ label, value }) {
@@ -10,23 +11,74 @@ function LedgerRow({ label, value }) {
   );
 }
 
-export function EntriesPanel({ rows }) {
+export function EntriesPanel({ rows, onAddEntry }) {
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({ description: "", value: "" });
+  const total = rows.reduce((sum, row) => sum + Number(row.value || 0), 0);
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    const description = form.description.trim();
+    const value = Number(String(form.value).replace(",", "."));
+    if (!description || !value) return;
+
+    onAddEntry({ description, value });
+    setForm({ description: "", value: "" });
+    setShowForm(false);
+  }
+
   return (
     <section className="premium-panel rounded-[28px] p-5 sm:p-6">
       <div className="mb-4 flex items-center justify-between gap-4">
         <div>
           <h3 className="font-display text-[1.8rem] font-bold text-white">Entradas & Ganhos</h3>
           <p className="mt-1 text-base text-copy/80">
-            Total renda extra: <strong className="text-white">{formatCurrency(0)}</strong>
+            Total renda extra: <strong className="text-white">{formatCurrency(total)}</strong>
           </p>
         </div>
         <button
           type="button"
+          onClick={() => setShowForm((current) => !current)}
           className="hidden rounded-2xl border border-cyan-300/25 bg-cyan-400/15 px-4 py-2 text-sm font-semibold text-cyan-200 sm:inline-flex"
         >
-          Adicionar entrada
+          {showForm ? "Fechar" : "Adicionar entrada"}
         </button>
       </div>
+
+      {showForm ? (
+        <form onSubmit={handleSubmit} className="mb-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_auto_auto]">
+          <input
+            value={form.description}
+            onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
+            placeholder="Descricao da entrada"
+            className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-base text-white outline-none"
+          />
+          <input
+            value={form.value}
+            onChange={(event) => setForm((current) => ({ ...current, value: event.target.value }))}
+            placeholder="Valor"
+            className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-base text-white outline-none"
+          />
+          <button
+            type="submit"
+            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-cyan-300/25 bg-cyan-400/15 px-4 py-3 text-sm font-semibold text-cyan-200"
+          >
+            <Plus className="h-4 w-4" />
+            Salvar
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setForm({ description: "", value: "" });
+              setShowForm(false);
+            }}
+            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-copy/80"
+          >
+            <X className="h-4 w-4" />
+            Cancelar
+          </button>
+        </form>
+      ) : null}
 
       <div className="overflow-hidden rounded-[22px] border border-white/10 bg-black/10">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-4 bg-white/10 px-4 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-copy/70">
@@ -42,10 +94,11 @@ export function EntriesPanel({ rows }) {
 
       <button
         type="button"
+        onClick={() => setShowForm((current) => !current)}
         className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-cyan-300/25 bg-cyan-400/15 px-4 py-2 text-sm font-semibold text-cyan-200"
       >
         <Plus className="h-4 w-4" />
-        Adicionar entrada
+        {showForm ? "Fechar entrada" : "Adicionar entrada"}
       </button>
     </section>
   );
