@@ -11,6 +11,8 @@ import {
   Wallet,
   X,
 } from "lucide-react";
+import logoFinancePerson from "../../assets/logo-financeperson.svg";
+import logoFinancas from "../../assets/logo-financas.svg";
 
 const navItems = [
   { key: "dashboard", label: "Dashboard", icon: Home },
@@ -51,6 +53,7 @@ export default function Sidebar({
   onNavigateSettings,
 }) {
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [logoSrc, setLogoSrc] = useState(logoFinancePerson);
   const userInitial = useMemo(() => currentUser.slice(0, 1).toUpperCase(), [currentUser]);
 
   return (
@@ -78,12 +81,21 @@ export default function Sidebar({
           </button>
         </div>
 
-        <div className="rounded-[24px] border border-white/10 bg-white/5 px-4 py-4">
-          <div className="flex items-center gap-3">
-            <img src="/logo-financeperson.svg" alt="FinancePerson" className="h-12 w-12 rounded-2xl" />
-            <div>
-              <h1 className="font-display text-[1.7rem] font-bold leading-none text-white">FinancePerson</h1>
-              <p className="mt-1 text-sm text-copy/70">Painel financeiro pessoal</p>
+        <div className="overflow-hidden rounded-[24px] border border-white/10 bg-white/5 px-4 py-4">
+          <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3">
+            <img
+              src={logoSrc}
+              onError={() => {
+                if (logoSrc !== logoFinancas) {
+                  setLogoSrc(logoFinancas);
+                }
+              }}
+              alt="FinancePerson"
+              className="h-11 w-11 rounded-2xl object-contain"
+            />
+            <div className="min-w-0">
+              <h1 className="truncate font-display text-[1.55rem] font-bold leading-none text-white">FinancePerson</h1>
+              <p className="mt-1 truncate text-[0.95rem] text-copy/70">Painel financeiro pessoal</p>
             </div>
           </div>
         </div>
