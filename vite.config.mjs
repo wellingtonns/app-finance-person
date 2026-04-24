@@ -9,6 +9,7 @@ export default defineConfig({
       input: {
         main: resolve(process.cwd(), "index.html"),
         dashboard: resolve(process.cwd(), "dashboard.html"),
+        settings: resolve(process.cwd(), "settings.html"),
       },
     },
   },

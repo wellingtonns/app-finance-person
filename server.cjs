@@ -52,6 +52,7 @@ function serveFile(res, filePath) {
 function resolveStaticPath(pathname) {
   if (pathname === "/") return path.join(distDir, "index.html");
   if (pathname === "/dashboard") return path.join(distDir, "dashboard.html");
+  if (pathname === "/settings") return path.join(distDir, "settings.html");
   return path.join(distDir, pathname.replace(/^\/+/, ""));
 }
 
