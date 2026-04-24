@@ -27,6 +27,7 @@ export default function DebtsTable({
   selectedPerson,
   onAddDebt,
   onRemoveDebt,
+  onNotify,
 }) {
   const [personFilter, setPersonFilter] = useState("selected");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -74,6 +75,7 @@ export default function DebtsTable({
   ];
 
   function resetFilters() {
+    console.log("[dashboard] Debt filters cleared");
     setPersonFilter("selected");
     setStatusFilter("all");
     setMonthFilter("");
@@ -84,7 +86,12 @@ export default function DebtsTable({
     event.preventDefault();
     const name = form.name.trim();
     const value = Number(String(form.value).replace(",", "."));
-    if (!name || !value || !form.person) return;
+    console.log("[dashboard] Debt save clicked", { ...form, value });
+    if (!name || !Number.isFinite(value) || value <= 0 || !form.person) {
+      console.warn("[dashboard] Invalid debt payload", form);
+      onNotify?.("Preencha pessoa, nome e valor valido para salvar a conta.");
+      return;
+    }
 
     onAddDebt({
       person: form.person,
@@ -137,7 +144,10 @@ export default function DebtsTable({
         </select>
         <button
           type="button"
-          onClick={() => setShowMonthFilter((current) => !current)}
+          onClick={() => {
+            console.log("[dashboard] Debt month filter toggle clicked", { open: !showMonthFilter });
+            setShowMonthFilter((current) => !current);
+          }}
           className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-sm text-copy/80"
         >
           <CalendarDays className="h-4 w-4 text-info" />
@@ -148,7 +158,10 @@ export default function DebtsTable({
         </div>
         <button
           type="button"
-          onClick={() => setShowAccountForm((current) => !current)}
+          onClick={() => {
+            console.log("[dashboard] Debt manager toggle clicked", { open: !showAccountForm });
+            setShowAccountForm((current) => !current);
+          }}
           className="inline-flex items-center justify-center gap-2 rounded-2xl border border-info/35 bg-info/15 px-4 py-3 text-sm font-semibold text-[#dcebff]"
         >
           <Settings2 className="h-4 w-4" />
@@ -174,7 +187,10 @@ export default function DebtsTable({
           />
           <button
             type="button"
-            onClick={() => setMonthFilter("")}
+            onClick={() => {
+              console.log("[dashboard] Debt month filter cleared");
+              setMonthFilter("");
+            }}
             className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-copy/70"
           >
             <X className="h-4 w-4" />
@@ -263,7 +279,10 @@ export default function DebtsTable({
                 <td className="px-4 py-3 text-right">
                   <button
                     type="button"
-                    onClick={() => onRemoveDebt(row.id)}
+                    onClick={() => {
+                      console.log("[dashboard] Debt remove clicked", row);
+                      onRemoveDebt(row.id);
+                    }}
                     className="inline-flex rounded-xl border border-white/10 bg-white/5 p-2 text-copy/70"
                     aria-label={`Remover conta ${row.name}`}
                   >

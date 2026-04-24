@@ -4,11 +4,20 @@ WORKDIR /app
 COPY package.json ./
 RUN npm install
 COPY . .
+RUN npm test
 RUN npm run build
 
-FROM nginx:1.27-alpine
+FROM node:20-alpine
 
-WORKDIR /usr/share/nginx/html
-COPY --from=build /app/dist ./
+WORKDIR /app
+ENV PORT=80
+
+COPY --from=build /app/package.json ./package.json
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/api ./api
+COPY --from=build /app/server.cjs ./server.cjs
 
 EXPOSE 80
+
+CMD ["node", "server.cjs"]

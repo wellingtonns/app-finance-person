@@ -11,7 +11,7 @@ function LedgerRow({ label, value }) {
   );
 }
 
-export function EntriesPanel({ rows, onAddEntry }) {
+export function EntriesPanel({ rows, onAddEntry, onNotify }) {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ description: "", value: "" });
   const total = rows.reduce((sum, row) => sum + Number(row.value || 0), 0);
@@ -20,7 +20,12 @@ export function EntriesPanel({ rows, onAddEntry }) {
     event.preventDefault();
     const description = form.description.trim();
     const value = Number(String(form.value).replace(",", "."));
-    if (!description || !value) return;
+    console.log("[dashboard] Entry save clicked", { description, value });
+    if (!description || !Number.isFinite(value) || value <= 0) {
+      console.warn("[dashboard] Invalid entry payload", form);
+      onNotify?.("Preencha descricao e valor valido para adicionar a entrada.");
+      return;
+    }
 
     onAddEntry({ description, value });
     setForm({ description: "", value: "" });
@@ -38,7 +43,10 @@ export function EntriesPanel({ rows, onAddEntry }) {
         </div>
         <button
           type="button"
-          onClick={() => setShowForm((current) => !current)}
+          onClick={() => {
+            console.log("[dashboard] Entry toggle clicked", { open: !showForm });
+            setShowForm((current) => !current);
+          }}
           className="hidden rounded-2xl border border-cyan-300/25 bg-cyan-400/15 px-4 py-2 text-sm font-semibold text-cyan-200 sm:inline-flex"
         >
           {showForm ? "Fechar" : "Adicionar entrada"}
@@ -69,6 +77,7 @@ export function EntriesPanel({ rows, onAddEntry }) {
           <button
             type="button"
             onClick={() => {
+              console.log("[dashboard] Entry cancel clicked");
               setForm({ description: "", value: "" });
               setShowForm(false);
             }}
@@ -94,7 +103,10 @@ export function EntriesPanel({ rows, onAddEntry }) {
 
       <button
         type="button"
-        onClick={() => setShowForm((current) => !current)}
+        onClick={() => {
+          console.log("[dashboard] Entry footer toggle clicked", { open: !showForm });
+          setShowForm((current) => !current);
+        }}
         className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-cyan-300/25 bg-cyan-400/15 px-4 py-2 text-sm font-semibold text-cyan-200"
       >
         <Plus className="h-4 w-4" />
@@ -111,7 +123,10 @@ export function LeisurePanel({ rows, form, setForm, onSubmit, onClear }) {
         <h3 className="font-display text-[1.8rem] font-bold text-white">Lazer</h3>
         <button
           type="button"
-          onClick={onClear}
+          onClick={() => {
+            console.log("[dashboard] Leisure clear clicked", { rows: rows.length });
+            onClear();
+          }}
           className="inline-flex items-center gap-2 rounded-2xl border border-action/40 bg-action/80 px-4 py-2 text-sm font-semibold text-[#231400]"
         >
           <Trash2 className="h-4 w-4" />

@@ -5,48 +5,24 @@ import HeaderPanel from "./components/HeaderPanel";
 import MetricCard from "./components/MetricCard";
 import { EntriesPanel, LeisurePanel } from "./components/LedgerPanel";
 import DebtsTable from "./components/DebtsTable";
+import { formatCurrency, getCurrentUser, logoutCurrentUser } from "./utils";
 import {
-  capitalRows as initialCapitalRows,
-  entryRows as initialEntryRows,
-  initialLeisureRows,
-  investmentRows as initialInvestmentRows,
-} from "./mockData";
-import { formatCurrency, getCurrentUser } from "./utils";
-
-const initialPeople = ["Andressa", "Wellington", "Casal"];
-
-const initialDebtRows = [
-  {
-    id: "debt-1",
-    person: "Andressa",
-    name: "Cartao Nubank",
-    value: 1200,
-    dueDate: "07/04/2026",
-    delay: 0,
-    status: "paid",
-    statusLabel: "Paga",
-  },
-  {
-    id: "debt-2",
-    person: "Wellington",
-    name: "Financiamento",
-    value: 1000,
-    dueDate: "22/04/2026",
-    delay: 0,
-    status: "open",
-    statusLabel: "A vencer",
-  },
-  {
-    id: "debt-3",
-    person: "Casal",
-    name: "Mercado parcelado",
-    value: 500,
-    dueDate: "03/04/2026",
-    delay: 3,
-    status: "late",
-    statusLabel: "Atrasada",
-  },
-];
+  addCapitalItem,
+  addDebtItem,
+  addEntryItem,
+  addInvestmentItem,
+  addLeisureItem,
+  addPersonItem,
+  clearCapitalItems,
+  clearLeisureItems,
+  createDashboardSnapshot,
+  createDefaultDashboardState,
+  normalizeDashboardState,
+  removeCapitalItem,
+  removeDebtItem,
+  removeInvestmentItem,
+  removePersonItem,
+} from "./state-utils.mjs";
 
 const viewTitles = {
   dashboard: "Dashboard - Abril de 2026",
@@ -55,11 +31,15 @@ const viewTitles = {
   investimentos: "Investimentos - Abril de 2026",
 };
 
-const dashboardStorageKey = "financeperson:dashboard-react:v1";
+const dashboardStorageKey = "financeperson:dashboard-react:v2";
 const remoteStateApiPath = "/api/state";
 
 function createId(prefix) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+}
+
+function logDashboard(message, details) {
+  console.log(`[dashboard] ${message}`, details || "");
 }
 
 function sanitizeRemoteUser(value) {
@@ -77,162 +57,44 @@ function buildRemoteStateUrl(user) {
 }
 
 async function pushStateToServer(user, snapshot) {
-  const response = await fetch(buildRemoteStateUrl(user), {
+  const endpoint = buildRemoteStateUrl(user);
+  logDashboard("Calling API to save state", { endpoint, user });
+
+  const response = await fetch(endpoint, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ state: snapshot }),
   });
+
   if (!response.ok) {
+    console.error("[dashboard] API save failed", { status: response.status, endpoint });
     throw new Error(`Falha ao salvar no servidor: ${response.status}`);
   }
 }
 
 async function fetchRemoteState(user) {
+  const endpoint = buildRemoteStateUrl(user);
+  logDashboard("Calling API to load state", { endpoint, user });
+
   try {
-    const response = await fetch(buildRemoteStateUrl(user), { method: "GET" });
-    if (!response.ok) return undefined;
+    const response = await fetch(endpoint, { method: "GET" });
+    if (response.status === 404) {
+      console.warn("[dashboard] /api/state returned 404", { endpoint });
+      return undefined;
+    }
+    if (!response.ok) {
+      console.error("[dashboard] API load failed", { status: response.status, endpoint });
+      return undefined;
+    }
+
     const payload = await response.json();
     if (!payload || typeof payload !== "object") return null;
     if (!payload.state || typeof payload.state !== "object") return null;
     return payload.state;
   } catch (error) {
-    console.warn("Nao foi possivel carregar dados do servidor.", error);
+    console.error("[dashboard] Failed to load remote state", error);
     return undefined;
   }
-}
-
-function normalizeTextList(list, fallback) {
-  if (!Array.isArray(list)) return [...fallback];
-  const seen = new Set();
-  const normalized = list
-    .map((item) => String(item || "").trim())
-    .filter(Boolean)
-    .filter((item) => {
-      const key = item.toLowerCase();
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-  return normalized.length ? normalized : [...fallback];
-}
-
-function normalizeMoneyRows(rows, fallback, prefix) {
-  const source = Array.isArray(rows) ? rows : fallback;
-  return source
-    .map((row) => {
-      const label = String(row && row.label ? row.label : "").trim();
-      const value = Number(row && row.value);
-      if (!label || !Number.isFinite(value)) return null;
-      return {
-        id: String((row && row.id) || createId(prefix)),
-        label,
-        value,
-      };
-    })
-    .filter(Boolean);
-}
-
-function normalizeCapitalRows(rows, fallback) {
-  const source = Array.isArray(rows) ? rows : fallback;
-  return source
-    .map((row) => {
-      const label = String(row && row.label ? row.label : "").trim();
-      const value = Number(row && row.value);
-      if (!label || !Number.isFinite(value)) return null;
-      return {
-        id: String((row && row.id) || createId("capital")),
-        label,
-        note: String(row && row.note ? row.note : "Atualizado agora").trim() || "Atualizado agora",
-        value,
-      };
-    })
-    .filter(Boolean);
-}
-
-function normalizeInvestmentRows(rows, fallback) {
-  const source = Array.isArray(rows) ? rows : fallback;
-  return source
-    .map((row) => {
-      const name = String(row && row.name ? row.name : "").trim();
-      const value = Number(row && row.value);
-      if (!name || !Number.isFinite(value)) return null;
-      return {
-        id: String((row && row.id) || createId("investment")),
-        name,
-        category: String(row && row.category ? row.category : "Carteira").trim() || "Carteira",
-        value,
-        yield: String(row && row.yield ? row.yield : "+0,00%").trim() || "+0,00%",
-      };
-    })
-    .filter(Boolean);
-}
-
-function normalizeDebtRows(rows, fallback, people) {
-  const source = Array.isArray(rows) ? rows : fallback;
-  return source
-    .map((row) => {
-      const person = String(row && row.person ? row.person : people[0]).trim();
-      const name = String(row && row.name ? row.name : "").trim();
-      const value = Number(row && row.value);
-      if (!person || !name || !Number.isFinite(value)) return null;
-      const status = ["paid", "open", "late"].includes(row && row.status) ? row.status : "open";
-      const statusLabel = status === "paid" ? "Paga" : status === "late" ? "Atrasada" : "A vencer";
-      return {
-        id: String((row && row.id) || createId("debt")),
-        person,
-        name,
-        value,
-        dueDate: String(row && row.dueDate ? row.dueDate : "A vencer").trim() || "A vencer",
-        delay: Number.isFinite(Number(row && row.delay)) ? Number(row.delay) : 0,
-        status,
-        statusLabel: String(row && row.statusLabel ? row.statusLabel : statusLabel).trim() || statusLabel,
-      };
-    })
-    .filter(Boolean);
-}
-
-function normalizeDashboardState(snapshot) {
-  const people = normalizeTextList(snapshot && snapshot.people, initialPeople);
-  const selectedPerson = people.includes(snapshot && snapshot.selectedPerson) ? snapshot.selectedPerson : people[0];
-
-  return {
-    people,
-    selectedPerson,
-    sumSalaries: snapshot && typeof snapshot.sumSalaries === "boolean" ? snapshot.sumSalaries : true,
-    consolidateDebts: snapshot && typeof snapshot.consolidateDebts === "boolean" ? snapshot.consolidateDebts : true,
-    entries: normalizeMoneyRows(snapshot && snapshot.entries, initialEntryRows, "entry"),
-    leisureRows: normalizeMoneyRows(snapshot && snapshot.leisureRows, initialLeisureRows, "leisure"),
-    debtRows: normalizeDebtRows(snapshot && snapshot.debtRows, initialDebtRows, people),
-    capitalItems: normalizeCapitalRows(snapshot && snapshot.capitalItems, initialCapitalRows),
-    investmentItems: normalizeInvestmentRows(snapshot && snapshot.investmentItems, initialInvestmentRows),
-    currentView: viewTitles[snapshot && snapshot.currentView] ? snapshot.currentView : "dashboard",
-  };
-}
-
-function createDashboardSnapshot({
-  people,
-  selectedPerson,
-  sumSalaries,
-  consolidateDebts,
-  entries,
-  leisureRows,
-  debtRows,
-  capitalItems,
-  investmentItems,
-  currentView,
-}) {
-  return {
-    people,
-    selectedPerson,
-    sumSalaries,
-    consolidateDebts,
-    entries,
-    leisureRows,
-    debtRows,
-    capitalItems,
-    investmentItems,
-    currentView,
-  };
 }
 
 function getInitialView() {
@@ -254,16 +116,28 @@ function OverviewCards({ cards }) {
   );
 }
 
-function CapitalPanel({ rows, onAddCapital, onRemoveCapital, onClearCapital }) {
+function CapitalPanel({ rows, onAddCapital, onRemoveCapital, onClearCapital, onNotify }) {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ label: "", note: "", value: "" });
   const total = rows.reduce((sum, row) => sum + row.value, 0);
+
+  function handleToggleForm() {
+    logDashboard("Capital button clicked", { action: showForm ? "close-form" : "open-form" });
+    setShowForm((current) => !current);
+  }
 
   function handleSubmit(event) {
     event.preventDefault();
     const label = form.label.trim();
     const value = Number(String(form.value).replace(",", "."));
-    if (!label || !value) return;
+
+    logDashboard("Capital save clicked", { label, value });
+
+    if (!label || !Number.isFinite(value) || value <= 0) {
+      onNotify("Preencha descricao e valor valido para adicionar ao capital.");
+      console.warn("[dashboard] Invalid capital payload", form);
+      return;
+    }
 
     onAddCapital({
       label,
@@ -290,7 +164,7 @@ function CapitalPanel({ rows, onAddCapital, onRemoveCapital, onClearCapital }) {
         <div className="flex gap-2">
           <button
             type="button"
-            onClick={() => setShowForm((current) => !current)}
+            onClick={handleToggleForm}
             className="inline-flex items-center gap-2 rounded-2xl border border-success/30 bg-success/15 px-4 py-2 text-sm font-semibold text-success"
           >
             <Plus className="h-4 w-4" />
@@ -298,7 +172,10 @@ function CapitalPanel({ rows, onAddCapital, onRemoveCapital, onClearCapital }) {
           </button>
           <button
             type="button"
-            onClick={onClearCapital}
+            onClick={() => {
+              logDashboard("Capital clear clicked", { rows: rows.length });
+              onClearCapital();
+            }}
             className="inline-flex items-center gap-2 rounded-2xl border border-danger/30 bg-danger/10 px-4 py-2 text-sm font-semibold text-danger"
           >
             <Trash2 className="h-4 w-4" />
@@ -356,7 +233,10 @@ function CapitalPanel({ rows, onAddCapital, onRemoveCapital, onClearCapital }) {
               <div className="text-right">
                 <button
                   type="button"
-                  onClick={() => onRemoveCapital(row.id)}
+                  onClick={() => {
+                    logDashboard("Capital remove clicked", row);
+                    onRemoveCapital(row.id);
+                  }}
                   className="inline-flex rounded-xl border border-white/10 bg-white/5 p-2 text-copy/70"
                   aria-label={`Remover item ${row.label}`}
                 >
@@ -371,15 +251,27 @@ function CapitalPanel({ rows, onAddCapital, onRemoveCapital, onClearCapital }) {
   );
 }
 
-function InvestmentsPanel({ rows, onAddInvestment, onRemoveInvestment }) {
+function InvestmentsPanel({ rows, onAddInvestment, onRemoveInvestment, onNotify }) {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: "", category: "", value: "", yield: "" });
+
+  function handleToggleForm() {
+    logDashboard("Investment button clicked", { action: showForm ? "close-form" : "open-form" });
+    setShowForm((current) => !current);
+  }
 
   function handleSubmit(event) {
     event.preventDefault();
     const name = form.name.trim();
     const value = Number(String(form.value).replace(",", "."));
-    if (!name || !value) return;
+
+    logDashboard("Investment save clicked", { name, value });
+
+    if (!name || !Number.isFinite(value) || value <= 0) {
+      onNotify("Preencha nome e valor valido para salvar o investimento.");
+      console.warn("[dashboard] Invalid investment payload", form);
+      return;
+    }
 
     onAddInvestment({
       name,
@@ -406,7 +298,7 @@ function InvestmentsPanel({ rows, onAddInvestment, onRemoveInvestment }) {
 
         <button
           type="button"
-          onClick={() => setShowForm((current) => !current)}
+          onClick={handleToggleForm}
           className="inline-flex items-center gap-2 rounded-2xl border border-info/35 bg-info/20 px-4 py-2 text-sm font-semibold text-[#dcebff]"
         >
           <Plus className="h-4 w-4" />
@@ -463,7 +355,10 @@ function InvestmentsPanel({ rows, onAddInvestment, onRemoveInvestment }) {
               </div>
               <button
                 type="button"
-                onClick={() => onRemoveInvestment(row.id)}
+                onClick={() => {
+                  logDashboard("Investment remove clicked", row);
+                  onRemoveInvestment(row.id);
+                }}
                 className="inline-flex rounded-xl border border-white/10 bg-white/5 p-2 text-copy/70"
                 aria-label={`Remover investimento ${row.name}`}
               >
@@ -484,28 +379,25 @@ function InvestmentsPanel({ rows, onAddInvestment, onRemoveInvestment }) {
 }
 
 function DashboardView({
-  entryRows,
-  leisureRows,
+  dashboardData,
   leisureForm,
   setLeisureForm,
   onLeisureSubmit,
   onClearLeisure,
   onAddEntry,
-  debtRows,
-  people,
-  selectedPerson,
   onAddDebt,
   onRemoveDebt,
   cards,
+  onNotify,
 }) {
   return (
     <>
       <OverviewCards cards={cards} />
 
       <section className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
-        <EntriesPanel rows={entryRows} onAddEntry={onAddEntry} />
+        <EntriesPanel rows={dashboardData.entries} onAddEntry={onAddEntry} onNotify={onNotify} />
         <LeisurePanel
-          rows={leisureRows}
+          rows={dashboardData.leisureRows}
           form={leisureForm}
           setForm={setLeisureForm}
           onSubmit={onLeisureSubmit}
@@ -514,26 +406,28 @@ function DashboardView({
       </section>
 
       <DebtsTable
-        rows={debtRows}
-        people={people}
-        selectedPerson={selectedPerson}
+        rows={dashboardData.debtRows}
+        people={dashboardData.people}
+        selectedPerson={dashboardData.selectedPerson}
         onAddDebt={onAddDebt}
         onRemoveDebt={onRemoveDebt}
+        onNotify={onNotify}
       />
     </>
   );
 }
 
-function AccountsView({ cards, debtRows, people, selectedPerson, onAddDebt, onRemoveDebt }) {
+function AccountsView({ dashboardData, cards, onAddDebt, onRemoveDebt, onNotify }) {
   return (
     <>
       <OverviewCards cards={cards} />
       <DebtsTable
-        rows={debtRows}
-        people={people}
-        selectedPerson={selectedPerson}
+        rows={dashboardData.debtRows}
+        people={dashboardData.people}
+        selectedPerson={dashboardData.selectedPerson}
         onAddDebt={onAddDebt}
         onRemoveDebt={onRemoveDebt}
+        onNotify={onNotify}
       />
     </>
   );
@@ -541,7 +435,7 @@ function AccountsView({ cards, debtRows, people, selectedPerson, onAddDebt, onRe
 
 function CapitalView({
   cards,
-  capitalRows,
+  dashboardData,
   onAddCapital,
   onRemoveCapital,
   onClearCapital,
@@ -550,6 +444,7 @@ function CapitalView({
   setLeisureForm,
   onLeisureSubmit,
   onClearLeisure,
+  onNotify,
 }) {
   return (
     <>
@@ -557,10 +452,11 @@ function CapitalView({
 
       <section className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
         <CapitalPanel
-          rows={capitalRows}
+          rows={dashboardData.capitalItems}
           onAddCapital={onAddCapital}
           onRemoveCapital={onRemoveCapital}
           onClearCapital={onClearCapital}
+          onNotify={onNotify}
         />
         <LeisurePanel
           rows={leisureRows}
@@ -574,14 +470,15 @@ function CapitalView({
   );
 }
 
-function InvestmentsView({ cards, investmentRows, onAddInvestment, onRemoveInvestment }) {
+function InvestmentsView({ cards, dashboardData, onAddInvestment, onRemoveInvestment, onNotify }) {
   return (
     <>
       <OverviewCards cards={cards} />
       <InvestmentsPanel
-        rows={investmentRows}
+        rows={dashboardData.investmentItems}
         onAddInvestment={onAddInvestment}
         onRemoveInvestment={onRemoveInvestment}
+        onNotify={onNotify}
       />
     </>
   );
@@ -589,18 +486,12 @@ function InvestmentsView({ cards, investmentRows, onAddInvestment, onRemoveInves
 
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [people, setPeople] = useState(initialPeople);
-  const [selectedPerson, setSelectedPerson] = useState("Andressa");
-  const [sumSalaries, setSumSalaries] = useState(true);
-  const [consolidateDebts, setConsolidateDebts] = useState(true);
-  const [entries, setEntries] = useState(initialEntryRows);
-  const [leisureRows, setLeisureRows] = useState(initialLeisureRows);
+  const [dashboardData, setDashboardData] = useState(() => {
+    const initial = createDefaultDashboardState();
+    return { ...initial, currentView: getInitialView() };
+  });
   const [leisureForm, setLeisureForm] = useState({ description: "", value: "" });
-  const [debtRows, setDebtRows] = useState(initialDebtRows);
-  const [capitalItems, setCapitalItems] = useState(initialCapitalRows);
-  const [investmentItems, setInvestmentItems] = useState(initialInvestmentRows);
   const [currentUser] = useState(getCurrentUser);
-  const [currentView, setCurrentView] = useState(getInitialView);
   const [actionMessage, setActionMessage] = useState("");
   const [syncStatus, setSyncStatus] = useState("Carregando dados...");
   const [isHydrated, setIsHydrated] = useState(false);
@@ -609,18 +500,17 @@ export default function App() {
   const saveQueuedRef = useRef(false);
   const latestSnapshotRef = useRef(null);
 
-  function applyDashboardState(snapshot) {
-    const normalized = normalizeDashboardState(snapshot);
-    setPeople(normalized.people);
-    setSelectedPerson(normalized.selectedPerson);
-    setSumSalaries(normalized.sumSalaries);
-    setConsolidateDebts(normalized.consolidateDebts);
-    setEntries(normalized.entries);
-    setLeisureRows(normalized.leisureRows);
-    setDebtRows(normalized.debtRows);
-    setCapitalItems(normalized.capitalItems);
-    setInvestmentItems(normalized.investmentItems);
-    setCurrentView(normalized.currentView);
+  function notify(message) {
+    setActionMessage(message);
+  }
+
+  function updateDashboardData(actionName, updater) {
+    logDashboard("Button clicked", { actionName });
+    setDashboardData((current) => {
+      const next = updater(current);
+      logDashboard("State changed", { actionName, before: current, after: next });
+      return next;
+    });
   }
 
   useEffect(() => {
@@ -628,7 +518,9 @@ export default function App() {
       if (window.innerWidth >= 768) setSidebarOpen(false);
     };
     const syncViewFromHash = () => {
-      setCurrentView(getInitialView());
+      const nextView = getInitialView();
+      logDashboard("Hash navigation detected", { nextView });
+      setDashboardData((current) => ({ ...current, currentView: nextView }));
     };
 
     window.addEventListener("resize", closeOnDesktop);
@@ -652,10 +544,13 @@ export default function App() {
 
       if (localSaved) {
         try {
-          applyDashboardState(JSON.parse(localSaved));
+          const localState = normalizeDashboardState(JSON.parse(localSaved));
+          logDashboard("Loading state from localStorage", localState);
+          setDashboardData(localState);
           localLoaded = true;
           if (!cancelled) setSyncStatus("Dados locais carregados.");
-        } catch {
+        } catch (error) {
+          console.error("[dashboard] Invalid localStorage state", error);
           window.localStorage.removeItem(storageKey);
         }
       }
@@ -665,7 +560,8 @@ export default function App() {
 
       if (remoteState && typeof remoteState === "object") {
         const normalized = normalizeDashboardState(remoteState);
-        applyDashboardState(normalized);
+        logDashboard("Loading state from backend", normalized);
+        setDashboardData(normalized);
         window.localStorage.setItem(storageKey, JSON.stringify(normalized));
         setSyncStatus("Dados carregados do banco.");
       } else if (remoteState === null) {
@@ -692,112 +588,16 @@ export default function App() {
     };
   }, [currentUser]);
 
-  function announce(message) {
-    setActionMessage(message);
-  }
-
-  function handleNavigate(view) {
-    setCurrentView(view);
-    setSidebarOpen(false);
-    window.location.hash = view;
-  }
-
-  function handleLeisureSubmit(event) {
-    event.preventDefault();
-
-    const description = leisureForm.description.trim();
-    const value = Number(String(leisureForm.value).replace(",", "."));
-    if (!description || !value) return;
-
-    setLeisureRows((current) => [...current, { id: createId("leisure"), label: description, value }]);
-    setLeisureForm({ description: "", value: "" });
-    announce(`Lazer "${description}" adicionado.`);
-  }
-
-  function handleAddEntry({ description, value }) {
-    setEntries((current) => [...current, { id: createId("entry"), label: description, value }]);
-    announce(`Entrada "${description}" adicionada.`);
-  }
-
-  function handleAddPerson(name) {
-    const formatted = name.charAt(0).toUpperCase() + name.slice(1).trim();
-    if (people.some((person) => person.toLowerCase() === formatted.toLowerCase())) {
-      announce(`A pessoa "${formatted}" ja existe.`);
-      return;
-    }
-    setPeople((current) => [...current, formatted]);
-    announce(`Pessoa "${formatted}" adicionada ao painel.`);
-  }
-
-  function handleRemovePerson(person) {
-    if (people.length === 1) {
-      announce("Nao e possivel remover a ultima pessoa.");
-      return;
-    }
-
-    const nextPeople = people.filter((item) => item !== person);
-    setPeople(nextPeople);
-    setDebtRows((current) => current.filter((row) => row.person !== person));
-    if (selectedPerson === person) setSelectedPerson(nextPeople[0]);
-    announce(`Pessoa "${person}" removida.`);
-  }
-
-  function handleAddDebt(debt) {
-    setDebtRows((current) => [...current, { id: createId("debt"), ...debt }]);
-    announce(`Conta "${debt.name}" adicionada para ${debt.person}.`);
-  }
-
-  function handleRemoveDebt(id) {
-    const debt = debtRows.find((item) => item.id === id);
-    setDebtRows((current) => current.filter((item) => item.id !== id));
-    announce(debt ? `Conta "${debt.name}" removida.` : "Conta removida.");
-  }
-
-  function handleAddCapital(item) {
-    setCapitalItems((current) => [...current, { id: createId("capital"), ...item }]);
-    announce(`Capital "${item.label}" registrado.`);
-  }
-
-  function handleRemoveCapital(id) {
-    const item = capitalItems.find((current) => current.id === id);
-    setCapitalItems((current) => current.filter((row) => row.id !== id));
-    announce(item ? `Item "${item.label}" removido do capital.` : "Item removido do capital.");
-  }
-
-  function handleClearCapital() {
-    setCapitalItems([]);
-    announce("Lista de capital limpa.");
-  }
-
-  function handleAddInvestment(item) {
-    setInvestmentItems((current) => [...current, { id: createId("investment"), ...item }]);
-    announce(`Ativo "${item.name}" adicionado.`);
-  }
-
-  function handleRemoveInvestment(id) {
-    const item = investmentItems.find((current) => current.id === id);
-    setInvestmentItems((current) => current.filter((row) => row.id !== id));
-    announce(item ? `Ativo "${item.name}" removido.` : "Ativo removido.");
-  }
-
   useEffect(() => {
     if (!isHydrated) return;
 
-    const snapshot = createDashboardSnapshot({
-      people,
-      selectedPerson,
-      sumSalaries,
-      consolidateDebts,
-      entries,
-      leisureRows,
-      debtRows,
-      capitalItems,
-      investmentItems,
-      currentView,
-    });
+    const snapshot = createDashboardSnapshot(dashboardData);
     latestSnapshotRef.current = snapshot;
 
+    logDashboard("Dashboard snapshot changed", snapshot);
+
     const storageKey = getScopedStorageKey(currentUser);
+    logDashboard("Saving state to localStorage", { storageKey, snapshot });
     window.localStorage.setItem(storageKey, JSON.stringify(snapshot));
 
     if (saveTimeoutRef.current) {
@@ -818,7 +618,7 @@ export default function App() {
         } while (saveQueuedRef.current);
         setSyncStatus("Dados sincronizados com o banco.");
       } catch (error) {
-        console.warn("Nao foi possivel sincronizar no banco.", error);
+        console.error("[dashboard] Remote sync failed", error);
         setSyncStatus("Persistencia remota indisponivel. Dados salvos localmente.");
       } finally {
         saveInFlightRef.current = false;
@@ -831,28 +631,135 @@ export default function App() {
         saveTimeoutRef.current = null;
       }
     };
-  }, [
-    capitalItems,
-    consolidateDebts,
-    currentUser,
-    currentView,
-    debtRows,
-    entries,
-    investmentItems,
-    isHydrated,
-    leisureRows,
-    people,
-    selectedPerson,
-    sumSalaries,
-  ]);
+  }, [currentUser, dashboardData, isHydrated]);
 
-  const totalEntries = entries.reduce((sum, row) => sum + row.value, 0);
-  const totalLeisure = leisureRows.reduce((sum, row) => sum + row.value, 0);
-  const totalPaid = totalByStatus(debtRows, "paid");
-  const totalOpen = totalByStatus(debtRows, "open");
-  const totalLate = totalByStatus(debtRows, "late");
-  const totalCapital = capitalItems.reduce((sum, row) => sum + row.value, 0);
-  const totalInvestments = investmentItems.reduce((sum, row) => sum + row.value, 0);
+  function handleNavigate(view) {
+    logDashboard("Sidebar navigation clicked", { view });
+    updateDashboardData("navigate-view", (current) => ({ ...current, currentView: view }));
+    setSidebarOpen(false);
+    window.location.hash = view;
+  }
+
+  function handleLeisureSubmit(event) {
+    event.preventDefault();
+    const description = leisureForm.description.trim();
+    const value = Number(String(leisureForm.value).replace(",", "."));
+
+    logDashboard("Leisure save clicked", { description, value });
+
+    if (!description || !Number.isFinite(value) || value <= 0) {
+      notify("Preencha descricao e valor valido para salvar o lazer.");
+      console.warn("[dashboard] Invalid leisure payload", leisureForm);
+      return;
+    }
+
+    updateDashboardData("add-leisure", (current) =>
+      addLeisureItem(current, { description, value }, () => createId("leisure"))
+    );
+    setLeisureForm({ description: "", value: "" });
+    notify(`Lazer "${description}" adicionado.`);
+  }
+
+  function handleClearLeisure() {
+    logDashboard("Leisure clear clicked", { rows: dashboardData.leisureRows.length });
+    updateDashboardData("clear-leisure", (current) => clearLeisureItems(current));
+    notify("Lista de lazer limpa.");
+  }
+
+  function handleAddEntry({ description, value }) {
+    updateDashboardData("add-entry", (current) =>
+      addEntryItem(current, { description, value }, () => createId("entry"))
+    );
+    notify(`Entrada "${description}" adicionada.`);
+  }
+
+  function handleAddPerson(name) {
+    const formatted = String(name || "").trim();
+    if (!formatted) {
+      notify("Informe um nome valido para adicionar pessoa.");
+      return;
+    }
+    if (dashboardData.people.some((item) => item.toLowerCase() === formatted.toLowerCase())) {
+      notify(`A pessoa "${formatted}" ja existe.`);
+      return;
+    }
+    updateDashboardData("add-person", (current) => addPersonItem(current, formatted));
+    notify(`Pessoa "${formatted}" adicionada ao painel.`);
+  }
+
+  function handleRemovePerson(person) {
+    if (dashboardData.people.length <= 1) {
+      notify("Nao e possivel remover a ultima pessoa.");
+      return;
+    }
+    logDashboard("Remove person clicked", { person });
+    updateDashboardData("remove-person", (current) => removePersonItem(current, person));
+    notify(`Pessoa "${person}" removida.`);
+  }
+
+  function handleAddDebt(debt) {
+    updateDashboardData("add-debt", (current) =>
+      addDebtItem(current, debt, () => createId("debt"))
+    );
+    notify(`Conta "${debt.name}" adicionada para ${debt.person}.`);
+  }
+
+  function handleRemoveDebt(id) {
+    const debt = dashboardData.debtRows.find((item) => item.id === id);
+    updateDashboardData("remove-debt", (current) => removeDebtItem(current, id));
+    notify(debt ? `Conta "${debt.name}" removida.` : "Conta removida.");
+  }
+
+  function handleAddCapital(item) {
+    updateDashboardData("add-capital", (current) =>
+      addCapitalItem(current, item, () => createId("capital"))
+    );
+    notify(`Capital "${item.label}" registrado.`);
+  }
+
+  function handleRemoveCapital(id) {
+    const item = dashboardData.capitalItems.find((current) => current.id === id);
+    updateDashboardData("remove-capital", (current) => removeCapitalItem(current, id));
+    notify(item ? `Item "${item.label}" removido do capital.` : "Item removido do capital.");
+  }
+
+  function handleClearCapital() {
+    updateDashboardData("clear-capital", (current) => clearCapitalItems(current));
+    notify("Lista de capital limpa.");
+  }
+
+  function handleAddInvestment(item) {
+    updateDashboardData("add-investment", (current) =>
+      addInvestmentItem(current, item, () => createId("investment"))
+    );
+    notify(`Ativo "${item.name}" adicionado.`);
+  }
+
+  function handleRemoveInvestment(id) {
+    const item = dashboardData.investmentItems.find((current) => current.id === id);
+    updateDashboardData("remove-investment", (current) => removeInvestmentItem(current, id));
+    notify(item ? `Ativo "${item.name}" removido.` : "Ativo removido.");
+  }
+
+  function setSelectedPerson(person) {
+    updateDashboardData("set-selected-person", (current) => ({ ...current, selectedPerson: person }));
+  }
+
+  function setSumSalaries(value) {
+    updateDashboardData("set-sum-salaries", (current) => ({ ...current, sumSalaries: value }));
+  }
+
+  function setConsolidateDebts(value) {
+    updateDashboardData("set-consolidate-debts", (current) => ({ ...current, consolidateDebts: value }));
+  }
+
+  const totalEntries = dashboardData.entries.reduce((sum, row) => sum + row.value, 0);
+  const totalLeisure = dashboardData.leisureRows.reduce((sum, row) => sum + row.value, 0);
+  const totalPaid = totalByStatus(dashboardData.debtRows, "paid");
+  const totalOpen = totalByStatus(dashboardData.debtRows, "open");
+  const totalLate = totalByStatus(dashboardData.debtRows, "late");
+  const totalCapital = dashboardData.capitalItems.reduce((sum, row) => sum + row.value, 0);
+  const totalInvestments = dashboardData.investmentItems.reduce((sum, row) => sum + row.value, 0);
 
   const dashboardCards = [
     { title: "Renda total", value: totalEntries, tone: "income" },
@@ -864,26 +771,31 @@ export default function App() {
   const accountCards = [
     { title: "Contas em aberto", value: totalOpen, tone: "danger" },
     { title: "Contas pagas", value: totalPaid, tone: "success" },
-    { title: "Contas atrasadas", value: debtRows.filter((row) => row.status === "late").length, tone: "info", format: "number" },
-    { title: "Titulares ativos", value: people.length, tone: "income", format: "number" },
+    {
+      title: "Contas atrasadas",
+      value: dashboardData.debtRows.filter((row) => row.status === "late").length,
+      tone: "info",
+      format: "number",
+    },
+    { title: "Titulares ativos", value: dashboardData.people.length, tone: "income", format: "number" },
   ];
 
   const capitalCards = [
     { title: "Capital atual", value: totalCapital, tone: "success" },
-    { title: "Itens no capital", value: capitalItems.length, tone: "income", format: "number" },
+    { title: "Itens no capital", value: dashboardData.capitalItems.length, tone: "income", format: "number" },
     { title: "Lazer planejado", value: totalLeisure, tone: "info" },
     { title: "Saldo apos contas", value: totalCapital - totalOpen - totalLate, tone: "danger" },
   ];
 
   const investmentsCards = [
     { title: "Total investido", value: totalInvestments, tone: "success" },
-    { title: "Ativos na carteira", value: investmentItems.length, tone: "income", format: "number" },
+    { title: "Ativos na carteira", value: dashboardData.investmentItems.length, tone: "income", format: "number" },
     {
       title: "Maior posicao",
-      value: investmentItems.length ? Math.max(...investmentItems.map((item) => item.value)) : 0,
+      value: dashboardData.investmentItems.length ? Math.max(...dashboardData.investmentItems.map((item) => item.value)) : 0,
       tone: "info",
     },
-    { title: "Pessoa ativa", value: selectedPerson, tone: "danger", format: "text" },
+    { title: "Pessoa ativa", value: dashboardData.selectedPerson, tone: "danger", format: "text" },
   ];
 
   const descriptionMap = {
@@ -894,75 +806,67 @@ export default function App() {
   };
 
   const statusNoteMap = {
-    dashboard: `Pessoa ativa: ${selectedPerson} | Entradas registradas: ${entries.length} | Usuarios no painel: ${people.length}`,
-    contas: `Dividas consolidadas: ${consolidateDebts ? "sim" : "nao"} | Contas cadastradas: ${debtRows.length}`,
-    capital: `Somar salarios marcados: ${sumSalaries ? "ativo" : "desligado"} | Itens de capital: ${capitalItems.length}`,
-    investimentos: `Carteira monitorada por ${selectedPerson} | Ativos acompanhados: ${investmentItems.length}`,
+    dashboard: `Pessoa ativa: ${dashboardData.selectedPerson} | Entradas registradas: ${dashboardData.entries.length} | Usuarios no painel: ${dashboardData.people.length}`,
+    contas: `Dividas consolidadas: ${dashboardData.consolidateDebts ? "sim" : "nao"} | Contas cadastradas: ${dashboardData.debtRows.length}`,
+    capital: `Somar salarios marcados: ${dashboardData.sumSalaries ? "ativo" : "desligado"} | Itens de capital: ${dashboardData.capitalItems.length}`,
+    investimentos: `Carteira monitorada por ${dashboardData.selectedPerson} | Ativos acompanhados: ${dashboardData.investmentItems.length}`,
   };
 
   function renderView() {
-    if (currentView === "contas") {
+    if (dashboardData.currentView === "contas") {
       return (
         <AccountsView
+          dashboardData={dashboardData}
           cards={accountCards}
-          debtRows={debtRows}
-          people={people}
-          selectedPerson={selectedPerson}
           onAddDebt={handleAddDebt}
           onRemoveDebt={handleRemoveDebt}
+          onNotify={notify}
         />
       );
     }
 
-    if (currentView === "capital") {
+    if (dashboardData.currentView === "capital") {
       return (
         <CapitalView
           cards={capitalCards}
-          capitalRows={capitalItems}
+          dashboardData={dashboardData}
           onAddCapital={handleAddCapital}
           onRemoveCapital={handleRemoveCapital}
           onClearCapital={handleClearCapital}
-          leisureRows={leisureRows}
+          leisureRows={dashboardData.leisureRows}
           leisureForm={leisureForm}
           setLeisureForm={setLeisureForm}
           onLeisureSubmit={handleLeisureSubmit}
-          onClearLeisure={() => {
-            setLeisureRows([]);
-            announce("Lista de lazer limpa.");
-          }}
+          onClearLeisure={handleClearLeisure}
+          onNotify={notify}
         />
       );
     }
 
-    if (currentView === "investimentos") {
+    if (dashboardData.currentView === "investimentos") {
       return (
         <InvestmentsView
           cards={investmentsCards}
-          investmentRows={investmentItems}
+          dashboardData={dashboardData}
           onAddInvestment={handleAddInvestment}
           onRemoveInvestment={handleRemoveInvestment}
+          onNotify={notify}
         />
       );
     }
 
     return (
       <DashboardView
-        entryRows={entries}
-        leisureRows={leisureRows}
+        dashboardData={dashboardData}
         leisureForm={leisureForm}
         setLeisureForm={setLeisureForm}
         onLeisureSubmit={handleLeisureSubmit}
-        onClearLeisure={() => {
-          setLeisureRows([]);
-          announce("Lista de lazer limpa.");
-        }}
+        onClearLeisure={handleClearLeisure}
         onAddEntry={handleAddEntry}
-        debtRows={debtRows}
-        people={people}
-        selectedPerson={selectedPerson}
         onAddDebt={handleAddDebt}
         onRemoveDebt={handleRemoveDebt}
         cards={dashboardCards}
+        onNotify={notify}
       />
     );
   }
@@ -979,25 +883,29 @@ export default function App() {
           open={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
           currentUser={currentUser}
-          currentView={currentView}
+          currentView={dashboardData.currentView}
           onNavigate={handleNavigate}
+          people={dashboardData.people}
+          selectedPerson={dashboardData.selectedPerson}
+          onAddPerson={handleAddPerson}
+          onRemovePerson={handleRemovePerson}
+          onLogout={logoutCurrentUser}
+          onNotify={notify}
         />
 
         <main className="min-w-0 space-y-4">
           <HeaderPanel
-            title={viewTitles[currentView]}
-            description={descriptionMap[currentView]}
-            statusNote={statusNoteMap[currentView]}
-            people={people}
-            selectedPerson={selectedPerson}
+            title={viewTitles[dashboardData.currentView]}
+            description={descriptionMap[dashboardData.currentView]}
+            statusNote={statusNoteMap[dashboardData.currentView]}
+            people={dashboardData.people}
+            selectedPerson={dashboardData.selectedPerson}
             setSelectedPerson={setSelectedPerson}
-            sumSalaries={sumSalaries}
+            sumSalaries={dashboardData.sumSalaries}
             setSumSalaries={setSumSalaries}
-            consolidateDebts={consolidateDebts}
+            consolidateDebts={dashboardData.consolidateDebts}
             setConsolidateDebts={setConsolidateDebts}
             onOpenSidebar={() => setSidebarOpen(true)}
-            onAddPerson={handleAddPerson}
-            onRemovePerson={handleRemovePerson}
           />
 
           {actionMessage ? (
