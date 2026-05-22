@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { CalendarDays, Pencil, Plus, Settings2, Trash2, X } from "lucide-react";
+import { CalendarDays, Plus, Settings2, Trash2, X } from "lucide-react";
 import { formatCurrency } from "../utils";
 
 const statusClasses = {
@@ -24,7 +24,6 @@ function defaultForm(selectedPersonId) {
     value: "",
     dueDate: "",
     month: new Date().toISOString().slice(0, 7),
-    status: "open",
   };
 }
 
@@ -32,12 +31,11 @@ function DebtForm({
   form,
   setForm,
   people,
-  editingId,
   onSubmit,
   onCancel,
 }) {
   return (
-    <form onSubmit={onSubmit} className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-[150px_minmax(180px,1fr)_140px_120px_150px_130px_auto_auto]">
+    <form onSubmit={onSubmit} className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-[150px_minmax(180px,1fr)_140px_120px_150px_auto_auto]">
       <select
         value={form.personId}
         onChange={(event) => setForm((current) => ({ ...current, personId: event.target.value }))}
@@ -79,21 +77,12 @@ function DebtForm({
         }
         className="field-control"
       />
-      <select
-        value={form.status}
-        onChange={(event) => setForm((current) => ({ ...current, status: event.target.value }))}
-        className="field-control"
-      >
-        <option value="open">A vencer</option>
-        <option value="paid">Paga</option>
-        <option value="late">Atrasada</option>
-      </select>
       <button
         type="submit"
         className="inline-flex items-center justify-center gap-2 rounded-2xl border border-info/35 bg-info/20 px-4 py-3 text-sm font-semibold text-[#dcebff]"
       >
         <Plus className="h-4 w-4" />
-        {editingId ? "Salvar" : "Adicionar"}
+        Adicionar
       </button>
       <button
         type="button"
@@ -125,7 +114,6 @@ export default function DebtsTable({
   const [showMonthFilter, setShowMonthFilter] = useState(false);
   const [showAccountForm, setShowAccountForm] = useState(false);
   const [form, setForm] = useState(() => defaultForm(selectedPersonId));
-  const [editingId, setEditingId] = useState("");
 
   useEffect(() => {
     setForm((current) => ({ ...current, personId: selectedPersonId || current.personId }));
@@ -159,37 +147,18 @@ export default function DebtsTable({
   }
 
   function resetForm() {
-    setEditingId("");
     setForm(defaultForm(selectedPersonId));
-  }
-
-  function handleEdit(row) {
-    console.log("[dashboard] Debt edit clicked", row);
-    setEditingId(row.id);
-    setShowAccountForm(true);
-    setForm({
-      id: row.id,
-      personId: row.personId,
-      name: row.name,
-      category: row.category,
-      value: String(row.value),
-      dueDate: row.dueDate,
-      month: row.month,
-      status: row.status,
-    });
   }
 
   function handleSubmit(event) {
     event.preventDefault();
     const payload = {
-      id: form.id,
       personId: form.personId,
       name: form.name.trim(),
       category: form.category.trim() || "Contas",
       value: Number(String(form.value).replace(",", ".")),
       dueDate: form.dueDate,
       month: form.dueDate ? form.dueDate.slice(0, 7) : form.month,
-      status: form.status,
     };
     console.log("[dashboard] Debt save clicked", payload);
     if (!payload.name || !payload.personId || !Number.isFinite(payload.value) || payload.value <= 0) {
@@ -198,15 +167,18 @@ export default function DebtsTable({
       return;
     }
 
-    if (editingId) {
-      onUpdateDebt?.(payload);
-      onNotify?.(`Conta "${payload.name}" atualizada.`);
-    } else {
-      onAddDebt?.(payload);
-      onNotify?.(`Conta "${payload.name}" adicionada.`);
-    }
+    onAddDebt?.(payload);
+    onNotify?.(`Conta "${payload.name}" adicionada.`);
     resetForm();
     setShowAccountForm(false);
+  }
+
+  function handleTogglePaid(row, checked) {
+    onUpdateDebt?.({
+      ...row,
+      status: checked ? "paid" : "open",
+    });
+    onNotify?.(checked ? `Conta "${row.name}" marcada como paga.` : `Conta "${row.name}" voltou para aberto.`);
   }
 
   return (
@@ -277,7 +249,7 @@ export default function DebtsTable({
               className="inline-flex items-center justify-center gap-2 rounded-2xl border border-info/35 bg-info/15 px-4 py-3 text-sm font-semibold text-[#dcebff]"
             >
               <Settings2 className="h-4 w-4" />
-              {showAccountForm ? "Fechar" : "Gerenciar contas"}
+              {showAccountForm ? "Fechar" : "Adicionar conta"}
             </button>
 
             <button
@@ -316,7 +288,6 @@ export default function DebtsTable({
               form={form}
               setForm={setForm}
               people={people}
-              editingId={editingId}
               onSubmit={handleSubmit}
               onCancel={() => {
                 console.log("[dashboard] Debt form cleared");
@@ -337,7 +308,7 @@ export default function DebtsTable({
               <th className="px-4 py-3">Valor</th>
               <th className="px-4 py-3">Vencimento</th>
               <th className="px-4 py-3">Status</th>
-              {!readOnly ? <th className="px-4 py-3 text-right">Acoes</th> : null}
+              {!readOnly ? <th className="px-4 py-3 text-right">Pagamento</th> : null}
             </tr>
           </thead>
           <tbody>
@@ -358,15 +329,16 @@ export default function DebtsTable({
                   </td>
                   {!readOnly ? (
                     <td className="px-4 py-3 text-right">
-                      <div className="flex justify-end gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleEdit(row)}
-                          className="inline-flex rounded-xl border border-white/10 bg-white/5 p-2 text-copy/70"
-                          aria-label={`Editar conta ${row.name}`}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
+                      <div className="flex justify-end gap-3">
+                        <label className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold text-copy/80">
+                          <input
+                            type="checkbox"
+                            checked={row.status === "paid"}
+                            onChange={(event) => handleTogglePaid(row, event.target.checked)}
+                            className="h-4 w-4 accent-emerald-400"
+                          />
+                          Paga
+                        </label>
                         <button
                           type="button"
                           onClick={() => {

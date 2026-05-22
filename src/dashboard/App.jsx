@@ -5,6 +5,7 @@ import HeaderPanel from "./components/HeaderPanel";
 import MetricCard from "./components/MetricCard";
 import { EntriesModule, LeisureModule } from "./components/LedgerPanel";
 import DebtsTable from "./components/DebtsTable";
+import AppShell from "./components/AppShell";
 import DashboardOverview from "./components/DashboardOverview";
 import InitialSetupPanel from "./components/InitialSetupPanel";
 import RecurringBillsPanel from "./components/RecurringBillsPanel";
@@ -16,7 +17,7 @@ import {
   addInvestmentItem,
   addLeisureItem,
   addPersonItem,
-  addRecurringBillItem,
+  addRecurringBillWithDebts,
   applyComputedDebtStatuses,
   clearCapitalItems,
   clearLeisureItems,
@@ -24,7 +25,6 @@ import {
   createDashboardSnapshot,
   createDefaultDashboardState,
   createId,
-  generateRecurringDebtsForMonth,
   getAvailableCategories,
   getMonthExtraIncome,
   getPeopleIncomeTotal,
@@ -48,7 +48,7 @@ import {
   updateInvestmentItem,
   updateLeisureItem,
   updatePersonItem,
-  updateRecurringBillItem,
+  updateRecurringBillWithDebts,
   VIEW_KEYS,
 } from "./state-utils.mjs";
 import {
@@ -997,20 +997,6 @@ export default function App() {
     () => sortByMonthDesc(dashboardData.debtRows.filter((item) => matchesDebtFilters(item, dashboardData.dashboardFilters, dashboardData.selectedPersonId))),
     [dashboardData.dashboardFilters, dashboardData.debtRows, dashboardData.selectedPersonId]
   );
-  const dashboardCapital = useMemo(
-    () => sortByMonthDesc(dashboardData.capitalItems.filter((item) => matchesSharedFilters(item, dashboardData.dashboardFilters, dashboardData.selectedPersonId))),
-    [dashboardData.capitalItems, dashboardData.dashboardFilters, dashboardData.selectedPersonId]
-  );
-  const dashboardInvestments = useMemo(
-    () =>
-      sortByMonthDesc(
-        dashboardData.investmentItems.filter((item) =>
-          matchesSharedFilters(item, dashboardData.dashboardFilters, dashboardData.selectedPersonId)
-        )
-      ),
-    [dashboardData.dashboardFilters, dashboardData.investmentItems, dashboardData.selectedPersonId]
-  );
-
   const peopleIncome = useMemo(
     () =>
       getPeopleIncomeTotal(
@@ -1034,8 +1020,6 @@ export default function App() {
   const openDebtTotal = dashboardDebts
     .filter((row) => row.status === "open" || row.status === "late")
     .reduce((sum, row) => sum + row.value, 0);
-  const capitalTotal = dashboardCapital.reduce((sum, row) => sum + row.value, 0);
-  const investmentsTotal = dashboardInvestments.reduce((sum, row) => sum + row.value, 0);
   const projectedBalance = peopleIncome + entriesTotal - openDebtTotal - leisureTotal;
 
   function handleNavigate(view) {
@@ -1080,26 +1064,31 @@ export default function App() {
 
   function handleAddRecurringBill(payload) {
     updateDashboardData("add-recurring-bill", (current) =>
-      addRecurringBillItem(current, payload, () => createId("recurring"))
+      addRecurringBillWithDebts(
+        current,
+        payload,
+        payload.startMonth || current.dashboardFilters.month,
+        () => createId("recurring"),
+        () => createId("debt")
+      )
     );
   }
 
   function handleUpdateRecurringBill(payload) {
-    updateDashboardData("update-recurring-bill", (current) => updateRecurringBillItem(current, payload));
+    updateDashboardData("update-recurring-bill", (current) =>
+      updateRecurringBillWithDebts(
+        current,
+        payload,
+        payload.startMonth || current.dashboardFilters.month,
+        () => createId("debt")
+      )
+    );
   }
 
   function handleRemoveRecurringBill(id) {
     const item = (dashboardData.recurringBills || []).find((current) => current.id === id);
     updateDashboardData("remove-recurring-bill", (current) => removeRecurringBillItem(current, id));
     notify(item ? `Conta recorrente "${item.name}" removida.` : "Conta recorrente removida.");
-  }
-
-  function handleGenerateRecurringDebts(month) {
-    const before = dashboardData.debtRows.length;
-    updateDashboardData("generate-recurring-debts", (current) =>
-      generateRecurringDebtsForMonth(current, month, () => createId("debt"))
-    );
-    notify(`Geracao de contas recorrentes para ${month} solicitada. Registros anteriores: ${before}.`);
   }
 
   function handleCompleteInitialSetup(payload) {
@@ -1195,6 +1184,11 @@ export default function App() {
     updateDashboardData(`set-dashboard-filter:${key}`, (current) => setDashboardFilter(current, key, value));
   }
 
+  function handleRefreshSync() {
+    updateDashboardData("manual-refresh-sync", (current) => ({ ...current }));
+    notify("Sincronizacao revalidada. Dados locais preservados.");
+  }
+
   const dashboardCards = [
     {
       title: "Renda total do mes",
@@ -1220,16 +1214,6 @@ export default function App() {
       title: "Saldo previsto",
       value: projectedBalance,
       tone: projectedBalance >= 0 ? "success" : "danger",
-    },
-    {
-      title: "Capital acumulado",
-      value: capitalTotal,
-      tone: "success",
-    },
-    {
-      title: "Total investido",
-      value: investmentsTotal,
-      tone: "info",
     },
     {
       title: "Gastos com lazer",
@@ -1349,31 +1333,16 @@ export default function App() {
 
   const headerControls = (
     <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-4">
-      <label className="grid gap-2">
-        <span className="text-xs uppercase tracking-[0.16em] text-copy/55">Pessoa ativa</span>
-        <select
-          value={dashboardData.selectedPersonId}
-          onChange={(event) => handleSetSelectedPerson(event.target.value)}
-          className="field-control"
-        >
-          {dashboardData.people.map((person) => (
-            <option key={person.id} value={person.id}>
-              {person.name}
-            </option>
-          ))}
-        </select>
-      </label>
-
       {dashboardData.currentView === "dashboard" ? (
         <>
           <label className="grid gap-2">
-            <span className="text-xs uppercase tracking-[0.16em] text-copy/55">Filtro pessoa</span>
+            <span className="text-xs uppercase tracking-[0.16em] text-copy/55">Pessoa do resumo</span>
             <select
               value={dashboardData.dashboardFilters.personId}
               onChange={(event) => handleSetDashboardFilter("personId", event.target.value)}
               className="field-control"
             >
-              <option value="all">Todas</option>
+              <option value="all">Todas as pessoas</option>
               {dashboardData.people.map((person) => (
                 <option key={person.id} value={person.id}>
                   {person.name}
@@ -1423,6 +1392,20 @@ export default function App() {
         </>
       ) : (
         <>
+          <label className="grid gap-2">
+            <span className="text-xs uppercase tracking-[0.16em] text-copy/55">Pessoa ativa</span>
+            <select
+              value={dashboardData.selectedPersonId}
+              onChange={(event) => handleSetSelectedPerson(event.target.value)}
+              className="field-control"
+            >
+              {dashboardData.people.map((person) => (
+                <option key={person.id} value={person.id}>
+                  {person.name}
+                </option>
+              ))}
+            </select>
+          </label>
           <div className="muted-tile">
             Mes base do resumo: <strong className="text-white">{dashboardData.dashboardFilters.month}</strong>
           </div>
@@ -1444,7 +1427,9 @@ export default function App() {
   const statusNote =
     dashboardData.currentView === "dashboard"
       ? `Filtros ativos: pessoa ${
-          activeDashboardPersonId === "all" ? "todas" : getPersonName(dashboardData.people, activeDashboardPersonId)
+          activeDashboardPersonId === "all"
+            ? "todas"
+            : getPersonName(dashboardData.people, activeDashboardPersonId)
         }, mes ${dashboardData.dashboardFilters.month}, categoria ${dashboardData.dashboardFilters.category}, status ${
           dashboardData.dashboardFilters.status
         }.`
@@ -1480,7 +1465,6 @@ export default function App() {
             onAdd={handleAddRecurringBill}
             onUpdate={handleUpdateRecurringBill}
             onRemove={handleRemoveRecurringBill}
-            onGenerateMonth={handleGenerateRecurringDebts}
             onNotify={notify}
           />
           <DebtsTable
@@ -1574,16 +1558,13 @@ export default function App() {
           month={dashboardData.dashboardFilters.month}
           people={dashboardData.people}
           debts={dashboardDebts}
-          capitalItems={dashboardCapital}
-          investmentItems={dashboardInvestments}
           leisureRows={dashboardLeisure}
           incomeTotal={peopleIncome + entriesTotal}
           paidDebtTotal={paidDebtTotal}
           openDebtTotal={openDebtTotal}
           lateDebtTotal={lateDebtTotal}
           projectedBalance={projectedBalance}
-          capitalTotal={capitalTotal}
-          investmentsTotal={investmentsTotal}
+          syncStatus={syncStatus}
           onNavigate={handleNavigate}
         />
       </>
@@ -1591,13 +1572,8 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-shell font-body text-copy">
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -left-24 top-[-80px] h-72 w-72 rounded-full bg-info/15 blur-3xl" />
-        <div className="absolute bottom-[-120px] right-[-80px] h-80 w-80 rounded-full bg-success/10 blur-3xl" />
-      </div>
-
-      <div className="relative grid min-h-screen w-full gap-3 px-3 py-3 md:grid-cols-[248px_minmax(0,1fr)] lg:gap-4 lg:px-4">
+    <AppShell
+      sidebar={
         <Sidebar
           open={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
@@ -1609,14 +1585,18 @@ export default function App() {
           onLogout={logoutCurrentUser}
           onNavigateSettings={handleNavigateSettings}
         />
-
-        <main className="min-w-0 space-y-3 lg:space-y-4">
+      }
+    >
           <HeaderPanel
             title={viewTitles[dashboardData.currentView]}
             description={viewDescriptions[dashboardData.currentView]}
             statusNote={statusNote}
             controls={headerControls}
             onOpenSidebar={() => setSidebarOpen(true)}
+            currentUser={currentUser}
+            selectedPersonName={selectedPersonName}
+            syncStatus={syncStatus}
+            onRefresh={handleRefreshSync}
           />
 
           {actionMessage ? (
@@ -1630,8 +1610,6 @@ export default function App() {
           </section>
 
           {renderView()}
-        </main>
-      </div>
-    </div>
+    </AppShell>
   );
 }

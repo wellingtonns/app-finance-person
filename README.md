@@ -20,6 +20,13 @@ Para ver logs:
 docker compose logs --tail 120
 ```
 
+Imagem direta:
+
+```powershell
+docker build -t app-finance-person .
+docker run --rm -p 8080:8080 app-finance-person
+```
+
 ## Como rodar localmente
 
 ```powershell

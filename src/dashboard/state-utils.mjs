@@ -92,6 +92,12 @@ function normalizeDueDay(value) {
   return Math.min(31, Math.max(1, Math.trunc(parsed)));
 }
 
+function normalizeRepeatMonths(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return 1;
+  return Math.min(60, Math.max(1, Math.trunc(parsed)));
+}
+
 function normalizeMonth(value) {
   const raw = safeText(value);
   if (/^\d{4}-\d{2}$/.test(raw)) return raw;
@@ -105,6 +111,14 @@ function normalizeMonth(value) {
   }
   if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw.slice(0, 7);
   return CURRENT_MONTH;
+}
+
+function addMonthsToMonth(month, offset) {
+  const normalizedMonth = normalizeMonth(month);
+  const year = Number(normalizedMonth.slice(0, 4));
+  const monthIndex = Number(normalizedMonth.slice(5, 7)) - 1;
+  const date = new Date(year, monthIndex + offset, 1);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
 
 function isMonthValue(value) {
@@ -161,7 +175,7 @@ function normalizePeople(list, fallback) {
 
 function normalizeFilterPerson(value, people, selectedPersonId) {
   if (value === "all") return "all";
-  if (value === "selected") return "selected";
+  if (value === "selected") return selectedPersonId;
   const resolved = resolvePersonId(people, value);
   return resolved || selectedPersonId;
 }
@@ -270,6 +284,8 @@ function normalizeRecurringBills(rows, fallback, people, defaultPersonId) {
         category: safeText(row?.category) || "Contas recorrentes",
         value,
         dueDay: normalizeDueDay(row?.dueDay || row?.day),
+        startMonth: normalizeMonth(row?.startMonth || row?.month),
+        repeatMonths: normalizeRepeatMonths(row?.repeatMonths),
         active: typeof row?.active === "boolean" ? row.active : true,
       };
     })
@@ -347,7 +363,7 @@ export function createDefaultDashboardState() {
     people,
     selectedPersonId: people[0].id,
     dashboardFilters: {
-      personId: "all",
+      personId: people[0].id,
       month: CURRENT_MONTH,
       category: "all",
       status: "all",
@@ -505,7 +521,7 @@ export function completeInitialSetup(state, payload, idFactory = createId) {
     selectedPersonId,
     dashboardFilters: {
       ...state.dashboardFilters,
-      personId: "all",
+      personId: selectedPersonId,
       month,
     },
     preferences: {
@@ -540,6 +556,8 @@ export function completeInitialSetup(state, payload, idFactory = createId) {
               category: safeText(payload?.firstBillCategory) || "Contas recorrentes",
               value: firstBillValue,
               dueDay: normalizeDueDay(payload?.firstBillDueDay),
+              startMonth: month,
+              repeatMonths: 1,
               active: true,
             },
           ]
@@ -563,7 +581,7 @@ export function clearFinancialData(state) {
     recurringBills: [],
     dashboardFilters: {
       ...state.dashboardFilters,
-      personId: "all",
+      personId: state.selectedPersonId,
       category: "all",
       status: "all",
     },
@@ -778,7 +796,7 @@ export function removePersonItem(state, personId) {
     dashboardFilters: {
       ...state.dashboardFilters,
       personId:
-        state.dashboardFilters.personId === resolvedPersonId ? "all" : state.dashboardFilters.personId,
+        state.dashboardFilters.personId === resolvedPersonId ? nextPeople[0].id : state.dashboardFilters.personId,
     },
     entries: state.entries.filter((row) => row.personId !== resolvedPersonId),
     leisureRows: state.leisureRows.filter((row) => row.personId !== resolvedPersonId),
@@ -871,6 +889,8 @@ export function addRecurringBillItem(state, payload, idFactory = () => createId(
         category: safeText(payload?.category) || "Contas recorrentes",
         value,
         dueDay: normalizeDueDay(payload?.dueDay),
+        startMonth: normalizeMonth(payload?.startMonth),
+        repeatMonths: normalizeRepeatMonths(payload?.repeatMonths),
         active: typeof payload?.active === "boolean" ? payload.active : true,
       },
     ],
@@ -892,6 +912,8 @@ export function updateRecurringBillItem(state, payload) {
             category: safeText(payload?.category) || item.category,
             value: Number.isFinite(value) && value > 0 ? value : item.value,
             dueDay: normalizeDueDay(payload?.dueDay || item.dueDay),
+            startMonth: normalizeMonth(payload?.startMonth || item.startMonth),
+            repeatMonths: normalizeRepeatMonths(payload?.repeatMonths || item.repeatMonths),
             active: typeof payload?.active === "boolean" ? payload.active : item.active,
           }
         : item
@@ -906,19 +928,21 @@ export function removeRecurringBillItem(state, id) {
   };
 }
 
-export function generateRecurringDebtsForMonth(state, month, idFactory = () => createId("debt")) {
-  const normalizedMonth = normalizeMonth(month);
-  const daysInMonth = new Date(Number(normalizedMonth.slice(0, 4)), Number(normalizedMonth.slice(5, 7)), 0).getDate();
-  const existingKeys = new Set(
-    state.debtRows
-      .filter((row) => row.month === normalizedMonth && row.recurringBillId)
-      .map((row) => row.recurringBillId)
-  );
-  const generated = (state.recurringBills || [])
-    .filter((bill) => bill.active && !existingKeys.has(bill.id))
-    .map((bill) => {
-      const day = String(Math.min(daysInMonth, normalizeDueDay(bill.dueDay))).padStart(2, "0");
-      return withComputedDebtStatus({
+function createRecurringDebtRowsForBill(state, bill, startMonth, repeatMonths, idFactory) {
+  const monthsToGenerate = normalizeRepeatMonths(repeatMonths);
+  const rows = [];
+
+  for (let offset = 0; offset < monthsToGenerate; offset += 1) {
+    const normalizedMonth = addMonthsToMonth(startMonth, offset);
+    const alreadyExists = state.debtRows.some(
+      (row) => row.month === normalizedMonth && row.recurringBillId === bill.id
+    );
+    if (alreadyExists) continue;
+
+    const daysInMonth = new Date(Number(normalizedMonth.slice(0, 4)), Number(normalizedMonth.slice(5, 7)), 0).getDate();
+    const day = String(Math.min(daysInMonth, normalizeDueDay(bill.dueDay))).padStart(2, "0");
+    rows.push(
+      withComputedDebtStatus({
         id: idFactory(),
         recurringBillId: bill.id,
         personId: resolvePersonId(state.people, bill.personId || state.selectedPersonId),
@@ -930,8 +954,96 @@ export function generateRecurringDebtsForMonth(state, month, idFactory = () => c
         status: "open",
         statusLabel: STATUS_LABELS.open,
         delay: 0,
-      });
-    });
+      })
+    );
+  }
+
+  return rows;
+}
+
+export function addRecurringBillWithDebts(
+  state,
+  payload,
+  startMonth,
+  recurringIdFactory = () => createId("recurring"),
+  debtIdFactory = () => createId("debt")
+) {
+  const name = safeText(payload?.name);
+  const value = normalizeMoney(payload?.value);
+  if (!name || !Number.isFinite(value) || value <= 0) return state;
+
+  const bill = {
+    id: recurringIdFactory(),
+    personId: resolvePersonId(state.people, payload?.personId || state.selectedPersonId),
+    name,
+    category: safeText(payload?.category) || "Contas recorrentes",
+    value,
+    dueDay: normalizeDueDay(payload?.dueDay),
+    startMonth: normalizeMonth(startMonth || payload?.startMonth),
+    repeatMonths: normalizeRepeatMonths(payload?.repeatMonths),
+    active: typeof payload?.active === "boolean" ? payload.active : true,
+  };
+  const withBill = {
+    ...state,
+    recurringBills: [...(state.recurringBills || []), bill],
+  };
+  const generated = bill.active
+    ? createRecurringDebtRowsForBill(withBill, bill, startMonth || payload?.startMonth, bill.repeatMonths, debtIdFactory)
+    : [];
+
+  return {
+    ...withBill,
+    debtRows: [...withBill.debtRows, ...generated],
+  };
+}
+
+export function updateRecurringBillWithDebts(
+  state,
+  payload,
+  startMonth,
+  debtIdFactory = () => createId("debt")
+) {
+  const id = safeText(payload?.id);
+  if (!id) return state;
+
+  const value = normalizeMoney(payload?.value);
+  const currentBill = (state.recurringBills || []).find((item) => item.id === id);
+  if (!currentBill) return state;
+
+  const bill = {
+    ...currentBill,
+    personId: resolvePersonId(state.people, payload?.personId || currentBill.personId),
+    name: safeText(payload?.name) || currentBill.name,
+    category: safeText(payload?.category) || currentBill.category,
+    value: Number.isFinite(value) && value > 0 ? value : currentBill.value,
+    dueDay: normalizeDueDay(payload?.dueDay || currentBill.dueDay),
+    startMonth: normalizeMonth(startMonth || payload?.startMonth || currentBill.startMonth),
+    repeatMonths: normalizeRepeatMonths(payload?.repeatMonths || currentBill.repeatMonths),
+    active: typeof payload?.active === "boolean" ? payload.active : currentBill.active,
+  };
+  const preservedDebtRows = state.debtRows.filter(
+    (row) => row.recurringBillId !== id || row.status === "paid"
+  );
+  const withBill = {
+    ...state,
+    recurringBills: (state.recurringBills || []).map((item) => (item.id === id ? bill : item)),
+    debtRows: preservedDebtRows,
+  };
+  const generated = bill.active
+    ? createRecurringDebtRowsForBill(withBill, bill, bill.startMonth, bill.repeatMonths, debtIdFactory)
+    : [];
+
+  return {
+    ...withBill,
+    debtRows: [...preservedDebtRows, ...generated],
+  };
+}
+
+export function generateRecurringDebtsForMonth(state, month, idFactory = () => createId("debt")) {
+  const normalizedMonth = normalizeMonth(month);
+  const generated = (state.recurringBills || [])
+    .filter((bill) => bill.active)
+    .flatMap((bill) => createRecurringDebtRowsForBill(state, bill, normalizedMonth, 1, idFactory));
 
   return {
     ...state,

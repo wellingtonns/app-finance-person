@@ -1,12 +1,14 @@
 import { useMemo, useState } from "react";
 import {
   BadgeDollarSign,
+  BarChart3,
   BriefcaseBusiness,
   CircleDollarSign,
   Home,
   LogOut,
   Menu,
   Settings,
+  SmilePlus,
   Users,
   Wallet,
   X,
@@ -19,8 +21,10 @@ const navItems = [
   { key: "entradas", label: "Entradas", icon: CircleDollarSign },
   { key: "contas", label: "Contas", icon: BriefcaseBusiness },
   { key: "capital", label: "Capital", icon: Wallet },
+  { key: "capital", label: "Lazer", icon: SmilePlus },
   { key: "investimentos", label: "Investimentos", icon: BadgeDollarSign },
   { key: "pessoas", label: "Pessoas", icon: Users },
+  { key: "dashboard", label: "Relatorios", icon: BarChart3 },
 ];
 
 function NavButton({ icon: Icon, label, active, onClick }) {
@@ -113,6 +117,15 @@ export default function Sidebar({
             />
           ))}
         </nav>
+
+        <button
+          type="button"
+          onClick={onNavigateSettings}
+          className="mt-2 flex w-full items-center gap-3 rounded-2xl border border-transparent px-4 py-3 text-left text-[15px] font-medium text-copy/85 transition hover:border-white/10 hover:bg-white/5"
+        >
+          <Settings className="h-4 w-4 text-info" />
+          <span>Configuracoes</span>
+        </button>
 
         <div className="mt-auto rounded-[20px] border border-white/10 bg-white/5 p-3">
           <div className="flex items-center gap-3">

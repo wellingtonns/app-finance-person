@@ -8,6 +8,7 @@ import {
   addLeisureItem,
   addPersonItem,
   addRecurringBillItem,
+  addRecurringBillWithDebts,
   applyComputedDebtStatuses,
   clearFinancialData,
   clearCapitalItems,
@@ -16,17 +17,20 @@ import {
   createDefaultDashboardState,
   generateRecurringDebtsForMonth,
   getMonthExtraIncome,
+  getPeopleIncomeTotal,
   normalizeDashboardState,
   removeDebtItem,
   removeEntryItem,
   removeInvestmentItem,
   removePersonItem,
   removeRecurringBillItem,
+  setDashboardFilter,
   setPersonExtraIncome,
   updateDebtItem,
   updateEntryItem,
   updatePersonItem,
   updateRecurringBillItem,
+  updateRecurringBillWithDebts,
 } from "./state-utils.mjs";
 
 test("entry CRUD keeps state immutable", () => {
@@ -123,6 +127,45 @@ test("people support add, update, extra income by month and removal", () => {
   assert.equal(removed.people.some((item) => item.id === "person-marina"), false);
 });
 
+test("person filter reflects only that person's fixed salary in dashboard totals", () => {
+  const previous = createDefaultDashboardState();
+  const personId = previous.people[0].id;
+  const updated = updatePersonItem(previous, { id: personId, name: previous.people[0].name, fixedSalary: 4200 });
+  const personTotal = getPeopleIncomeTotal(
+    updated.people,
+    updated.dashboardFilters.month,
+    updated.preferences.includeFixedSalary,
+    updated.dashboardFilters.personId
+  );
+
+  assert.equal(updated.dashboardFilters.personId, personId);
+  assert.equal(personTotal, 4200);
+});
+
+test("all people filter sums all fixed salaries", () => {
+  const previous = createDefaultDashboardState();
+  const first = updatePersonItem(previous, {
+    id: previous.people[0].id,
+    name: previous.people[0].name,
+    fixedSalary: 4200,
+  });
+  const second = updatePersonItem(first, {
+    id: first.people[1].id,
+    name: first.people[1].name,
+    fixedSalary: 5600,
+  });
+  const allPeople = setDashboardFilter(second, "personId", "all");
+  const total = getPeopleIncomeTotal(
+    allPeople.people,
+    allPeople.dashboardFilters.month,
+    allPeople.preferences.includeFixedSalary,
+    allPeople.dashboardFilters.personId
+  );
+
+  assert.equal(allPeople.dashboardFilters.personId, "all");
+  assert.equal(total, 9800);
+});
+
 test("capital and investment mutations stay immutable", () => {
   const previous = createDefaultDashboardState();
   const personId = previous.people[0].id;
@@ -183,6 +226,12 @@ test("debt status is computed from due date when not paid", () => {
 
   const paid = updateDebtItem(refreshed, { id: "late-test", status: "paid" });
   assert.equal(paid.debtRows.find((row) => row.id === "late-test")?.status, "paid");
+
+  const reopened = applyComputedDebtStatuses(
+    updateDebtItem(paid, { id: "late-test", status: "open" }),
+    new Date("2026-05-22T12:00:00.000Z")
+  );
+  assert.equal(reopened.debtRows.find((row) => row.id === "late-test")?.status, "late");
 });
 
 test("recurring bills can be generated once per month", () => {
@@ -203,6 +252,76 @@ test("recurring bills can be generated once per month", () => {
   assert.equal(generated.debtRows[0].dueDate, "2026-05-07");
   assert.equal(generatedAgain.debtRows.length, 1);
   assert.equal(removed.recurringBills.length, 0);
+});
+
+test("adding recurring bills can generate debts for multiple months immediately", () => {
+  const previous = createDefaultDashboardState();
+  const withoutRecurring = { ...previous, recurringBills: [], debtRows: [] };
+  let debtCounter = 0;
+  const generated = addRecurringBillWithDebts(
+    withoutRecurring,
+    {
+      personId: previous.people[0].id,
+      name: "Internet",
+      category: "Servicos",
+      value: 120,
+      dueDay: 10,
+      repeatMonths: 3,
+    },
+    "2026-05",
+    () => "recurring-internet",
+    () => `debt-internet-${(debtCounter += 1)}`
+  );
+
+  assert.equal(generated.recurringBills.length, 1);
+  assert.equal(generated.recurringBills[0].repeatMonths, 3);
+  assert.equal(generated.debtRows.length, 3);
+  assert.deepEqual(
+    generated.debtRows.map((row) => row.dueDate),
+    ["2026-05-10", "2026-06-10", "2026-07-10"]
+  );
+});
+
+test("editing recurring bills refreshes generated open debts from the new month", () => {
+  const previous = createDefaultDashboardState();
+  const withoutRecurring = { ...previous, recurringBills: [], debtRows: [] };
+  let debtCounter = 0;
+  const generated = addRecurringBillWithDebts(
+    withoutRecurring,
+    {
+      personId: previous.people[0].id,
+      name: "Internet",
+      category: "Servicos",
+      value: 120,
+      dueDay: 10,
+      repeatMonths: 2,
+    },
+    "2026-05",
+    () => "recurring-internet",
+    () => `debt-original-${(debtCounter += 1)}`
+  );
+  const edited = updateRecurringBillWithDebts(
+    generated,
+    {
+      id: "recurring-internet",
+      personId: previous.people[0].id,
+      name: "Internet fibra",
+      category: "Servicos",
+      value: 150,
+      dueDay: 15,
+      startMonth: "2026-07",
+      repeatMonths: 3,
+    },
+    "2026-07",
+    () => `debt-edited-${(debtCounter += 1)}`
+  );
+
+  assert.equal(edited.recurringBills[0].name, "Internet fibra");
+  assert.equal(edited.recurringBills[0].startMonth, "2026-07");
+  assert.deepEqual(
+    edited.debtRows.map((row) => `${row.month}:${row.dueDate}:${row.value}`),
+    ["2026-07:2026-07-15:150", "2026-08:2026-08-15:150", "2026-09:2026-09-15:150"]
+  );
 });
 
 test("clearFinancialData keeps people and removes all financial values", () => {
