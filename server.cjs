@@ -3,6 +3,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { URL } = require("node:url");
 const stateHandler = require("./api/state");
+const authHandler = require("./api/auth");
 
 const port = Number(process.env.PORT || 80);
 const distDir = path.join(__dirname, "dist");
@@ -98,6 +99,13 @@ const server = http.createServer((req, res) => {
     req.query = Object.fromEntries(url.searchParams.entries());
     const adaptedResponse = createResponseAdapter(res);
     stateHandler(req, adaptedResponse);
+    return;
+  }
+
+  if (url.pathname === "/api/auth") {
+    req.query = Object.fromEntries(url.searchParams.entries());
+    const adaptedResponse = createResponseAdapter(res);
+    authHandler(req, adaptedResponse);
     return;
   }
 

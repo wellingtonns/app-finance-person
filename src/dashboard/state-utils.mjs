@@ -13,18 +13,14 @@ export const DEFAULT_PEOPLE = [
   {
     id: "person-andressa",
     name: "Andressa",
-    fixedSalary: 4200,
-    extraIncomeByMonth: {
-      [CURRENT_MONTH]: 350,
-    },
+    fixedSalary: 0,
+    extraIncomeByMonth: {},
   },
   {
     id: "person-wellington",
     name: "Wellington",
-    fixedSalary: 5600,
-    extraIncomeByMonth: {
-      [CURRENT_MONTH]: 900,
-    },
+    fixedSalary: 0,
+    extraIncomeByMonth: {},
   },
   {
     id: "person-casal",
@@ -34,133 +30,17 @@ export const DEFAULT_PEOPLE = [
   },
 ];
 
-export const DEFAULT_ENTRIES = [
-  {
-    id: "entry-1",
-    personId: "person-andressa",
-    label: "Freelance landing page",
-    category: "Freelance",
-    month: CURRENT_MONTH,
-    value: 1000,
-  },
-  {
-    id: "entry-2",
-    personId: "person-wellington",
-    label: "Bonus mensal",
-    category: "Bonus",
-    month: CURRENT_MONTH,
-    value: 1000,
-  },
-];
+export const DEFAULT_ENTRIES = [];
 
-export const DEFAULT_LEISURE = [
-  {
-    id: "leisure-1",
-    personId: "person-casal",
-    label: "Cinema",
-    category: "Lazer",
-    month: CURRENT_MONTH,
-    value: 120,
-  },
-  {
-    id: "leisure-2",
-    personId: "person-casal",
-    label: "Jantar",
-    category: "Lazer",
-    month: CURRENT_MONTH,
-    value: 250,
-  },
-];
+export const DEFAULT_LEISURE = [];
 
-export const DEFAULT_DEBTS = [
-  {
-    id: "debt-1",
-    personId: "person-andressa",
-    name: "Cartao Nubank",
-    category: "Cartao",
-    value: 1200,
-    month: CURRENT_MONTH,
-    dueDate: "2026-04-07",
-    delay: 0,
-    status: "paid",
-    statusLabel: "Paga",
-  },
-  {
-    id: "debt-2",
-    personId: "person-wellington",
-    name: "Financiamento",
-    category: "Moradia",
-    value: 1000,
-    month: CURRENT_MONTH,
-    dueDate: "2026-04-22",
-    delay: 0,
-    status: "open",
-    statusLabel: "A vencer",
-  },
-  {
-    id: "debt-3",
-    personId: "person-casal",
-    name: "Mercado parcelado",
-    category: "Mercado",
-    value: 500,
-    month: CURRENT_MONTH,
-    dueDate: "2026-04-03",
-    delay: 3,
-    status: "late",
-    statusLabel: "Atrasada",
-  },
-];
+export const DEFAULT_DEBTS = [];
 
-export const DEFAULT_CAPITAL = [
-  {
-    id: "capital-1",
-    personId: "person-wellington",
-    label: "Reserva emergencia",
-    category: "Reserva",
-    value: 1850,
-    month: CURRENT_MONTH,
-    note: "Protegido",
-  },
-  {
-    id: "capital-2",
-    personId: "person-andressa",
-    label: "Caixa do negocio",
-    category: "Negocio",
-    value: 850,
-    month: CURRENT_MONTH,
-    note: "Abril",
-  },
-];
+export const DEFAULT_CAPITAL = [];
 
-export const DEFAULT_INVESTMENTS = [
-  {
-    id: "investment-1",
-    personId: "person-wellington",
-    name: "Tesouro Selic",
-    category: "Renda fixa",
-    value: 5200,
-    month: CURRENT_MONTH,
-    yield: "+0,92%",
-  },
-  {
-    id: "investment-2",
-    personId: "person-andressa",
-    name: "CDB liquidez diaria",
-    category: "Reserva",
-    value: 3400,
-    month: CURRENT_MONTH,
-    yield: "+0,81%",
-  },
-  {
-    id: "investment-3",
-    personId: "person-casal",
-    name: "ETF IVVB11",
-    category: "Exterior",
-    value: 7200,
-    month: CURRENT_MONTH,
-    yield: "+1,34%",
-  },
-];
+export const DEFAULT_INVESTMENTS = [];
+
+export const DEFAULT_RECURRING_BILLS = [];
 
 const STATUS_LABELS = {
   paid: "Paga",
@@ -204,6 +84,12 @@ function normalizeDisplayName(value) {
 function normalizeMoney(value) {
   const parsed = Number(String(value ?? "").replace(",", "."));
   return Number.isFinite(parsed) ? parsed : NaN;
+}
+
+function normalizeDueDay(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return 1;
+  return Math.min(31, Math.max(1, Math.trunc(parsed)));
 }
 
 function normalizeMonth(value) {
@@ -284,6 +170,23 @@ function normalizeStatus(value) {
   return ["all", "paid", "open", "late"].includes(value) ? value : "all";
 }
 
+function getComputedDebtStatus(row, today = new Date()) {
+  if (row.status === "paid") return "paid";
+  const dueDate = safeText(row.dueDate);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) return "open";
+  return dueDate < today.toISOString().slice(0, 10) ? "late" : "open";
+}
+
+function withComputedDebtStatus(row, today = new Date()) {
+  const status = getComputedDebtStatus(row, today);
+  return {
+    ...row,
+    status,
+    statusLabel: STATUS_LABELS[status],
+    delay: status === "late" ? Math.max(1, Number(row.delay || 0)) : 0,
+  };
+}
+
 function normalizeCategory(value) {
   const category = safeText(value);
   return category || "all";
@@ -336,8 +239,9 @@ function normalizeDebtRows(rows, fallback, people, defaultPersonId) {
       if (!name || !Number.isFinite(value)) return null;
       const status = ["paid", "open", "late"].includes(row?.status) ? row.status : "open";
       const month = normalizeMonth(row?.month || row?.dueDate);
-      return {
+      return withComputedDebtStatus({
         id: safeText(row?.id) || createId("debt"),
+        recurringBillId: safeText(row?.recurringBillId),
         personId: resolvePersonId(people, row?.personId || row?.person || defaultPersonId),
         name,
         category: safeText(row?.category) || "Contas",
@@ -347,6 +251,26 @@ function normalizeDebtRows(rows, fallback, people, defaultPersonId) {
         delay: Number.isFinite(Number(row?.delay)) ? Number(row.delay) : status === "late" ? 3 : 0,
         status,
         statusLabel: safeText(row?.statusLabel) || STATUS_LABELS[status],
+      });
+    })
+    .filter(Boolean);
+}
+
+function normalizeRecurringBills(rows, fallback, people, defaultPersonId) {
+  const source = Array.isArray(rows) ? rows : fallback;
+  return source
+    .map((row) => {
+      const name = safeText(row?.name || row?.label);
+      const value = normalizeMoney(row?.value);
+      if (!name || !Number.isFinite(value)) return null;
+      return {
+        id: safeText(row?.id) || createId("recurring"),
+        personId: resolvePersonId(people, row?.personId || row?.person || defaultPersonId),
+        name,
+        category: safeText(row?.category) || "Contas recorrentes",
+        value,
+        dueDay: normalizeDueDay(row?.dueDay || row?.day),
+        active: typeof row?.active === "boolean" ? row.active : true,
       };
     })
     .filter(Boolean);
@@ -409,6 +333,7 @@ function createPreferences(snapshot) {
           : true,
     autoSync: typeof source.autoSync === "boolean" ? source.autoSync : true,
     compactNumbers: typeof source.compactNumbers === "boolean" ? source.compactNumbers : false,
+    setupCompleted: typeof source.setupCompleted === "boolean" ? source.setupCompleted : false,
   };
 }
 
@@ -432,12 +357,14 @@ export function createDefaultDashboardState() {
       consolidateHouseholdDebts: true,
       autoSync: true,
       compactNumbers: false,
+      setupCompleted: false,
     },
     entries: cloneRows(DEFAULT_ENTRIES),
     leisureRows: cloneRows(DEFAULT_LEISURE),
     debtRows: cloneRows(DEFAULT_DEBTS),
     capitalItems: cloneRows(DEFAULT_CAPITAL),
     investmentItems: cloneRows(DEFAULT_INVESTMENTS),
+    recurringBills: cloneRows(DEFAULT_RECURRING_BILLS),
     currentView: "dashboard",
   };
 }
@@ -468,6 +395,7 @@ export function normalizeDashboardState(snapshot) {
       people,
       selectedPersonId
     ),
+    recurringBills: normalizeRecurringBills(snapshot?.recurringBills, fallback.recurringBills, people, selectedPersonId),
     currentView: VIEW_KEYS.includes(snapshot?.currentView) ? snapshot.currentView : "dashboard",
   };
 }
@@ -483,6 +411,7 @@ export function createDashboardSnapshot(state) {
     debtRows: cloneRows(state.debtRows),
     capitalItems: cloneRows(state.capitalItems),
     investmentItems: cloneRows(state.investmentItems),
+    recurringBills: cloneRows(state.recurringBills || []),
     currentView: state.currentView,
   };
 }
@@ -545,6 +474,102 @@ export function setPreferenceValue(state, key, value) {
     preferences: {
       ...state.preferences,
       [key]: value,
+    },
+  };
+}
+
+export function completeInitialSetup(state, payload, idFactory = createId) {
+  const month = normalizeMonth(payload?.month);
+  const primaryName = normalizeDisplayName(payload?.primaryName) || "Principal";
+  const secondaryNames = safeText(payload?.secondaryNames)
+    .split(",")
+    .map((name) => normalizeDisplayName(name))
+    .filter(Boolean);
+  const names = [...new Set([primaryName, ...secondaryNames])];
+  const fixedSalary = normalizeMoney(payload?.fixedSalary);
+  const extraIncome = normalizeMoney(payload?.extraIncome);
+  const people = names.map((name, index) => ({
+    id: idFactory("person"),
+    name,
+    fixedSalary: index === 0 && Number.isFinite(fixedSalary) ? Math.max(0, fixedSalary) : 0,
+    extraIncomeByMonth: index === 0 && Number.isFinite(extraIncome) && extraIncome > 0 ? { [month]: extraIncome } : {},
+  }));
+  const selectedPersonId = people[0]?.id || state.selectedPersonId;
+  const capitalValue = normalizeMoney(payload?.capitalValue);
+  const firstBillValue = normalizeMoney(payload?.firstBillValue);
+  const firstBillName = safeText(payload?.firstBillName);
+
+  return {
+    ...state,
+    people: people.length ? people : state.people,
+    selectedPersonId,
+    dashboardFilters: {
+      ...state.dashboardFilters,
+      personId: "all",
+      month,
+    },
+    preferences: {
+      ...state.preferences,
+      setupCompleted: true,
+    },
+    entries: [],
+    leisureRows: [],
+    debtRows: [],
+    investmentItems: [],
+    capitalItems:
+      Number.isFinite(capitalValue) && capitalValue > 0
+        ? [
+            {
+              id: idFactory("capital"),
+              personId: selectedPersonId,
+              label: safeText(payload?.capitalLabel) || "Capital inicial",
+              category: "Capital inicial",
+              value: capitalValue,
+              month,
+              note: "Setup inicial",
+            },
+          ]
+        : [],
+    recurringBills:
+      firstBillName && Number.isFinite(firstBillValue) && firstBillValue > 0
+        ? [
+            {
+              id: idFactory("recurring"),
+              personId: selectedPersonId,
+              name: firstBillName,
+              category: safeText(payload?.firstBillCategory) || "Contas recorrentes",
+              value: firstBillValue,
+              dueDay: normalizeDueDay(payload?.firstBillDueDay),
+              active: true,
+            },
+          ]
+        : [],
+  };
+}
+
+export function clearFinancialData(state) {
+  return {
+    ...state,
+    people: state.people.map((person) => ({
+      ...person,
+      fixedSalary: 0,
+      extraIncomeByMonth: {},
+    })),
+    entries: [],
+    leisureRows: [],
+    debtRows: [],
+    capitalItems: [],
+    investmentItems: [],
+    recurringBills: [],
+    dashboardFilters: {
+      ...state.dashboardFilters,
+      personId: "all",
+      category: "all",
+      status: "all",
+    },
+    preferences: {
+      ...state.preferences,
+      setupCompleted: true,
     },
   };
 }
@@ -760,6 +785,7 @@ export function removePersonItem(state, personId) {
     debtRows: state.debtRows.filter((row) => row.personId !== resolvedPersonId),
     capitalItems: state.capitalItems.filter((row) => row.personId !== resolvedPersonId),
     investmentItems: state.investmentItems.filter((row) => row.personId !== resolvedPersonId),
+    recurringBills: (state.recurringBills || []).filter((row) => row.personId !== resolvedPersonId),
   };
 }
 
@@ -773,8 +799,9 @@ export function addDebtItem(state, payload, idFactory = () => createId("debt")) 
     ...state,
     debtRows: [
       ...state.debtRows,
-      {
+      withComputedDebtStatus({
         id: idFactory(),
+        recurringBillId: safeText(payload?.recurringBillId),
         personId: resolvePersonId(state.people, payload?.personId || state.selectedPersonId),
         name,
         category: safeText(payload?.category) || "Contas",
@@ -784,7 +811,7 @@ export function addDebtItem(state, payload, idFactory = () => createId("debt")) 
         status,
         statusLabel: safeText(payload?.statusLabel) || STATUS_LABELS[status],
         delay: Number.isFinite(Number(payload?.delay)) ? Number(payload.delay) : status === "late" ? 3 : 0,
-      },
+      }),
     ],
   };
 }
@@ -799,7 +826,7 @@ export function updateDebtItem(state, payload) {
       const status = ["paid", "open", "late"].includes(payload?.status) ? payload.status : item.status;
       const month = normalizeMonth(payload?.month || payload?.dueDate || item.month);
       const nextValue = normalizeMoney(payload?.value);
-      return {
+      return withComputedDebtStatus({
         ...item,
         personId: resolvePersonId(state.people, payload?.personId || item.personId),
         name: safeText(payload?.name) || item.name,
@@ -810,8 +837,15 @@ export function updateDebtItem(state, payload) {
         status,
         statusLabel: STATUS_LABELS[status],
         delay: Number.isFinite(Number(payload?.delay)) ? Number(payload.delay) : status === "late" ? 3 : 0,
-      };
+      });
     }),
+  };
+}
+
+export function applyComputedDebtStatuses(state, today = new Date()) {
+  return {
+    ...state,
+    debtRows: state.debtRows.map((row) => withComputedDebtStatus(row, today)),
   };
 }
 
@@ -819,6 +853,89 @@ export function removeDebtItem(state, id) {
   return {
     ...state,
     debtRows: state.debtRows.filter((row) => row.id !== id),
+  };
+}
+
+export function addRecurringBillItem(state, payload, idFactory = () => createId("recurring")) {
+  const name = safeText(payload?.name);
+  const value = normalizeMoney(payload?.value);
+  if (!name || !Number.isFinite(value) || value <= 0) return state;
+  return {
+    ...state,
+    recurringBills: [
+      ...(state.recurringBills || []),
+      {
+        id: idFactory(),
+        personId: resolvePersonId(state.people, payload?.personId || state.selectedPersonId),
+        name,
+        category: safeText(payload?.category) || "Contas recorrentes",
+        value,
+        dueDay: normalizeDueDay(payload?.dueDay),
+        active: typeof payload?.active === "boolean" ? payload.active : true,
+      },
+    ],
+  };
+}
+
+export function updateRecurringBillItem(state, payload) {
+  const id = safeText(payload?.id);
+  const value = normalizeMoney(payload?.value);
+  if (!id) return state;
+  return {
+    ...state,
+    recurringBills: (state.recurringBills || []).map((item) =>
+      item.id === id
+        ? {
+            ...item,
+            personId: resolvePersonId(state.people, payload?.personId || item.personId),
+            name: safeText(payload?.name) || item.name,
+            category: safeText(payload?.category) || item.category,
+            value: Number.isFinite(value) && value > 0 ? value : item.value,
+            dueDay: normalizeDueDay(payload?.dueDay || item.dueDay),
+            active: typeof payload?.active === "boolean" ? payload.active : item.active,
+          }
+        : item
+    ),
+  };
+}
+
+export function removeRecurringBillItem(state, id) {
+  return {
+    ...state,
+    recurringBills: (state.recurringBills || []).filter((row) => row.id !== id),
+  };
+}
+
+export function generateRecurringDebtsForMonth(state, month, idFactory = () => createId("debt")) {
+  const normalizedMonth = normalizeMonth(month);
+  const daysInMonth = new Date(Number(normalizedMonth.slice(0, 4)), Number(normalizedMonth.slice(5, 7)), 0).getDate();
+  const existingKeys = new Set(
+    state.debtRows
+      .filter((row) => row.month === normalizedMonth && row.recurringBillId)
+      .map((row) => row.recurringBillId)
+  );
+  const generated = (state.recurringBills || [])
+    .filter((bill) => bill.active && !existingKeys.has(bill.id))
+    .map((bill) => {
+      const day = String(Math.min(daysInMonth, normalizeDueDay(bill.dueDay))).padStart(2, "0");
+      return withComputedDebtStatus({
+        id: idFactory(),
+        recurringBillId: bill.id,
+        personId: resolvePersonId(state.people, bill.personId || state.selectedPersonId),
+        name: bill.name,
+        category: bill.category,
+        value: bill.value,
+        month: normalizedMonth,
+        dueDate: `${normalizedMonth}-${day}`,
+        status: "open",
+        statusLabel: STATUS_LABELS.open,
+        delay: 0,
+      });
+    });
+
+  return {
+    ...state,
+    debtRows: [...state.debtRows, ...generated],
   };
 }
 
@@ -940,5 +1057,6 @@ export function getAvailableCategories(state) {
   state.debtRows.forEach((item) => categories.add(item.category));
   state.capitalItems.forEach((item) => categories.add(item.category));
   state.investmentItems.forEach((item) => categories.add(item.category));
+  (state.recurringBills || []).forEach((item) => categories.add(item.category));
   return [...categories];
 }

@@ -11,7 +11,7 @@ function PersonSelect({ people, value, onChange }) {
     <select
       value={value}
       onChange={onChange}
-      className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-sm text-white outline-none"
+      className="field-control"
     >
       {people.map((person) => (
         <option key={person.id} value={person.id}>
@@ -59,7 +59,7 @@ export function ReadOnlyLedgerSummary({ title, description, rows, emptyMessage }
   const total = rows.reduce((sum, row) => sum + Number(row.value || 0), 0);
 
   return (
-    <section className="premium-panel rounded-[28px] p-5 sm:p-6">
+    <section className="premium-panel rounded-[22px] p-4 sm:p-5">
       <div className="mb-4">
         <h3 className="font-display text-[1.8rem] font-bold text-white">{title}</h3>
         <p className="mt-1 text-base text-copy/78">{description}</p>
@@ -197,7 +197,7 @@ export function EntriesModule({
   }
 
   return (
-    <section className="premium-panel rounded-[28px] p-5 sm:p-6">
+    <section className="premium-panel rounded-[22px] p-4 sm:p-5">
       <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h3 className="font-display text-[1.9rem] font-bold text-white">Entradas e ganhos</h3>
@@ -208,7 +208,7 @@ export function EntriesModule({
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="grid gap-3 xl:grid-cols-[170px_minmax(0,1fr)_150px_140px_150px_auto_auto]">
+      <form onSubmit={handleSubmit} className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-[150px_minmax(180px,1fr)_140px_130px_130px_auto_auto]">
         <PersonSelect
           people={people}
           value={form.personId}
@@ -218,25 +218,25 @@ export function EntriesModule({
           value={form.label}
           onChange={(event) => setForm((current) => ({ ...current, label: event.target.value }))}
           placeholder="Descricao da entrada"
-          className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-base text-white outline-none"
+          className="field-control"
         />
         <input
           value={form.category}
           onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))}
           placeholder="Categoria"
-          className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-base text-white outline-none"
+          className="field-control"
         />
         <input
           type="month"
           value={form.month}
           onChange={(event) => setForm((current) => ({ ...current, month: event.target.value }))}
-          className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-base text-white outline-none"
+          className="field-control"
         />
         <input
           value={form.value}
           onChange={(event) => setForm((current) => ({ ...current, value: event.target.value }))}
           placeholder="Valor"
-          className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-base text-white outline-none"
+          className="field-control"
         />
         <InlineActionButton type="submit" icon={Plus} label={editingItem ? "Salvar" : "Adicionar"} tone="info" />
         <InlineActionButton icon={X} label="Limpar" onClick={resetForm} />
@@ -360,7 +360,7 @@ export function LeisureModule({
   }
 
   return (
-    <section className="premium-panel rounded-[28px] p-5 sm:p-6">
+    <section className="premium-panel rounded-[22px] p-4 sm:p-5">
       <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h3 className="font-display text-[1.9rem] font-bold text-white">Lazer planejado</h3>
@@ -381,7 +381,7 @@ export function LeisureModule({
       </div>
 
       <form onSubmit={handleSubmit} className="grid gap-3">
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[170px_minmax(0,1fr)_150px_140px_150px]">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-[150px_minmax(180px,1fr)_140px_130px_130px]">
           <PersonSelect
             people={people}
             value={form.personId}
@@ -391,25 +391,25 @@ export function LeisureModule({
             value={form.label}
             onChange={(event) => setForm((current) => ({ ...current, label: event.target.value }))}
             placeholder="Descricao do lazer"
-            className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-base text-white outline-none"
+            className="field-control"
           />
           <input
             value={form.category}
             onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))}
             placeholder="Categoria"
-            className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-base text-white outline-none"
+            className="field-control"
           />
           <input
             type="month"
             value={form.month}
             onChange={(event) => setForm((current) => ({ ...current, month: event.target.value }))}
-            className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-base text-white outline-none"
+            className="field-control"
           />
           <input
             value={form.value}
             onChange={(event) => setForm((current) => ({ ...current, value: event.target.value }))}
             placeholder="Valor"
-            className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-base text-white outline-none"
+            className="field-control"
           />
         </div>
 

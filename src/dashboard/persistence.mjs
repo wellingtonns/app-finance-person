@@ -29,8 +29,8 @@ export async function pushStateToServer(user, snapshot) {
     body: JSON.stringify({ state: snapshot }),
   });
 
-  if (response.status === 404) {
-    console.warn("[dashboard] /api/state returned 404 while saving", { endpoint });
+  if (response.status === 404 || response.status === 503) {
+    console.warn("[dashboard] Remote persistence unavailable while saving", { endpoint, status: response.status });
     throw new Error("Persistencia remota indisponivel");
   }
 
@@ -48,8 +48,8 @@ export async function fetchRemoteState(user) {
 
   try {
     const response = await fetch(endpoint, { method: "GET" });
-    if (response.status === 404) {
-      console.warn("[dashboard] /api/state returned 404", { endpoint });
+    if (response.status === 404 || response.status === 503) {
+      console.warn("[dashboard] Remote persistence unavailable", { endpoint, status: response.status });
       return undefined;
     }
     if (!response.ok) {

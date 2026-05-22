@@ -3,8 +3,11 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import Sidebar from "./components/Sidebar";
 import HeaderPanel from "./components/HeaderPanel";
 import MetricCard from "./components/MetricCard";
-import { EntriesModule, LeisureModule, ReadOnlyLedgerSummary } from "./components/LedgerPanel";
+import { EntriesModule, LeisureModule } from "./components/LedgerPanel";
 import DebtsTable from "./components/DebtsTable";
+import DashboardOverview from "./components/DashboardOverview";
+import InitialSetupPanel from "./components/InitialSetupPanel";
+import RecurringBillsPanel from "./components/RecurringBillsPanel";
 import { formatCurrency, getCurrentUser, logoutCurrentUser } from "./utils";
 import {
   addCapitalItem,
@@ -13,11 +16,15 @@ import {
   addInvestmentItem,
   addLeisureItem,
   addPersonItem,
+  addRecurringBillItem,
+  applyComputedDebtStatuses,
   clearCapitalItems,
   clearLeisureItems,
+  completeInitialSetup,
   createDashboardSnapshot,
   createDefaultDashboardState,
   createId,
+  generateRecurringDebtsForMonth,
   getAvailableCategories,
   getMonthExtraIncome,
   getPeopleIncomeTotal,
@@ -30,6 +37,7 @@ import {
   removeLeisureItem,
   removePersonExtraIncome,
   removePersonItem,
+  removeRecurringBillItem,
   setCurrentView,
   setDashboardFilter,
   setPersonExtraIncome,
@@ -40,6 +48,7 @@ import {
   updateInvestmentItem,
   updateLeisureItem,
   updatePersonItem,
+  updateRecurringBillItem,
   VIEW_KEYS,
 } from "./state-utils.mjs";
 import {
@@ -110,43 +119,10 @@ function sortByMonthDesc(rows) {
 
 function OverviewCards({ cards }) {
   return (
-    <section className="grid gap-3 xl:grid-cols-4 md:grid-cols-2">
+    <section className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-4">
       {cards.map((card) => (
         <MetricCard key={card.title} {...card} />
       ))}
-    </section>
-  );
-}
-
-function DashboardMiniChart({ rows }) {
-  const maxValue = rows.length ? Math.max(...rows.map((row) => row.value), 1) : 1;
-
-  return (
-    <section className="premium-panel rounded-[28px] p-5 sm:p-6">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h3 className="font-display text-[1.8rem] font-bold text-white">Distribuicao do periodo</h3>
-          <p className="mt-1 text-base text-copy/78">Leitura visual rapida dos principais blocos financeiros filtrados.</p>
-        </div>
-        <p className="text-sm text-copy/60">Visao somente leitura</p>
-      </div>
-
-      <div className="mt-6 grid gap-4">
-        {rows.map((row) => (
-          <div key={row.label}>
-            <div className="mb-2 flex items-center justify-between gap-3 text-sm">
-              <span className="text-copy/75">{row.label}</span>
-              <strong className="text-white">{formatCurrency(row.value)}</strong>
-            </div>
-            <div className="h-3 overflow-hidden rounded-full bg-white/10">
-              <div
-                className={`h-full rounded-full ${row.barClass}`}
-                style={{ width: `${Math.max(10, (row.value / maxValue) * 100)}%` }}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
     </section>
   );
 }
@@ -226,7 +202,7 @@ function CapitalModule({
   }
 
   return (
-    <section className="premium-panel rounded-[28px] p-5 sm:p-6">
+    <section className="premium-panel rounded-[22px] p-4 sm:p-5">
       <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h3 className="font-display text-[1.9rem] font-bold text-white">Composicao do capital</h3>
@@ -252,11 +228,11 @@ function CapitalModule({
       </div>
 
       <form onSubmit={handleSubmit} className="grid gap-3">
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[170px_minmax(0,1fr)_150px_150px_140px_140px]">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-[150px_minmax(180px,1fr)_140px_140px_130px_130px]">
           <select
             value={form.personId}
             onChange={(event) => setForm((current) => ({ ...current, personId: event.target.value }))}
-            className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-sm text-white outline-none"
+            className="field-control"
           >
             {people.map((person) => (
               <option key={person.id} value={person.id}>
@@ -268,31 +244,31 @@ function CapitalModule({
             value={form.label}
             onChange={(event) => setForm((current) => ({ ...current, label: event.target.value }))}
             placeholder="Item do capital"
-            className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-base text-white outline-none"
+            className="field-control"
           />
           <input
             value={form.category}
             onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))}
             placeholder="Categoria"
-            className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-base text-white outline-none"
+            className="field-control"
           />
           <input
             value={form.note}
             onChange={(event) => setForm((current) => ({ ...current, note: event.target.value }))}
             placeholder="Observacao"
-            className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-base text-white outline-none"
+            className="field-control"
           />
           <input
             type="month"
             value={form.month}
             onChange={(event) => setForm((current) => ({ ...current, month: event.target.value }))}
-            className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-base text-white outline-none"
+            className="field-control"
           />
           <input
             value={form.value}
             onChange={(event) => setForm((current) => ({ ...current, value: event.target.value }))}
             placeholder="Valor"
-            className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-base text-white outline-none"
+            className="field-control"
           />
         </div>
 
@@ -314,8 +290,8 @@ function CapitalModule({
         </div>
       </form>
 
-      <div className="mt-5 overflow-hidden rounded-[22px] border border-white/10 bg-black/10">
-        <div className="grid gap-3 bg-white/10 px-4 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-copy/70 lg:grid-cols-[160px_minmax(0,1fr)_140px_140px_140px_auto]">
+      <div className="mt-5 overflow-x-auto rounded-[18px] border border-white/10 bg-black/10">
+        <div className="grid min-w-[760px] gap-3 bg-white/10 px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-copy/70 lg:grid-cols-[140px_minmax(0,1fr)_120px_110px_120px_auto]">
           <span>Pessoa</span>
           <span>Item</span>
           <span>Categoria</span>
@@ -328,7 +304,7 @@ function CapitalModule({
             rows.map((row) => (
               <li
                 key={row.id}
-                className="grid gap-3 border-b border-white/10 px-4 py-4 text-sm text-copy/90 last:border-b-0 lg:grid-cols-[160px_minmax(0,1fr)_140px_140px_140px_auto] lg:items-center"
+                className="grid min-w-[760px] gap-3 border-b border-white/10 px-4 py-4 text-sm text-copy/90 last:border-b-0 lg:grid-cols-[140px_minmax(0,1fr)_120px_110px_120px_auto] lg:items-center"
               >
                 <span>{getPersonName(people, row.personId)}</span>
                 <div className="min-w-0">
@@ -452,7 +428,7 @@ function InvestmentsModule({
   }
 
   return (
-    <section className="premium-panel rounded-[28px] p-5 sm:p-6">
+    <section className="premium-panel rounded-[22px] p-4 sm:p-5">
       <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h3 className="font-display text-[1.9rem] font-bold text-white">Carteira de investimentos</h3>
@@ -463,11 +439,11 @@ function InvestmentsModule({
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="grid gap-3 xl:grid-cols-[170px_minmax(0,1fr)_150px_140px_140px_140px_auto_auto]">
+      <form onSubmit={handleSubmit} className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-[150px_minmax(180px,1fr)_140px_130px_120px_120px_auto_auto]">
         <select
           value={form.personId}
           onChange={(event) => setForm((current) => ({ ...current, personId: event.target.value }))}
-          className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-sm text-white outline-none"
+          className="field-control"
         >
           {people.map((person) => (
             <option key={person.id} value={person.id}>
@@ -479,31 +455,31 @@ function InvestmentsModule({
           value={form.name}
           onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
           placeholder="Nome do ativo"
-          className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-base text-white outline-none"
+          className="field-control"
         />
         <input
           value={form.category}
           onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))}
           placeholder="Categoria"
-          className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-base text-white outline-none"
+          className="field-control"
         />
         <input
           type="month"
           value={form.month}
           onChange={(event) => setForm((current) => ({ ...current, month: event.target.value }))}
-          className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-base text-white outline-none"
+          className="field-control"
         />
         <input
           value={form.value}
           onChange={(event) => setForm((current) => ({ ...current, value: event.target.value }))}
           placeholder="Valor"
-          className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-base text-white outline-none"
+          className="field-control"
         />
         <input
           value={form.yield}
           onChange={(event) => setForm((current) => ({ ...current, yield: event.target.value }))}
           placeholder="+0,80%"
-          className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-base text-white outline-none"
+          className="field-control"
         />
         <button
           type="submit"
@@ -521,7 +497,7 @@ function InvestmentsModule({
         </button>
       </form>
 
-      <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="mt-5 grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
         {rows.length ? (
           rows.map((row) => (
             <article
@@ -667,26 +643,26 @@ function PeopleModule({
 
   return (
     <section className="space-y-4">
-      <div className="grid gap-4 xl:grid-cols-[0.92fr_1.08fr]">
-        <section className="premium-panel rounded-[28px] p-5 sm:p-6">
+      <div className="grid gap-4 2xl:grid-cols-[0.92fr_1.08fr]">
+        <section className="premium-panel rounded-[22px] p-4 sm:p-5">
           <h3 className="font-display text-[1.9rem] font-bold text-white">Cadastro de pessoas</h3>
           <p className="mt-1 text-base text-copy/78">Nome e salario fixo entram aqui. A renda extra fica separada por mes.</p>
 
           <form
             onSubmit={handleSavePerson}
-            className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(220px,1fr)_180px_auto_auto]"
+            className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(180px,1fr)_150px_auto_auto]"
           >
             <input
               value={personForm.name}
               onChange={(event) => setPersonForm((current) => ({ ...current, name: event.target.value }))}
               placeholder="Nome da pessoa"
-              className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-base text-white outline-none"
+              className="field-control"
             />
             <input
               value={personForm.fixedSalary}
               onChange={(event) => setPersonForm((current) => ({ ...current, fixedSalary: event.target.value }))}
               placeholder="Salario fixo"
-              className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-base text-white outline-none"
+              className="field-control"
             />
             <button
               type="submit"
@@ -705,15 +681,15 @@ function PeopleModule({
           </form>
         </section>
 
-        <section className="premium-panel rounded-[28px] p-5 sm:p-6">
+        <section className="premium-panel rounded-[22px] p-4 sm:p-5">
           <h3 className="font-display text-[1.9rem] font-bold text-white">Renda extra mensal</h3>
           <p className="mt-1 text-base text-copy/78">Cada pessoa pode ter meses com renda extra diferente, ou nenhum valor.</p>
 
-          <form onSubmit={handleSaveExtraIncome} className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-[170px_150px_160px_auto]">
+          <form onSubmit={handleSaveExtraIncome} className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-[150px_140px_150px_auto]">
             <select
               value={extraForm.personId}
               onChange={(event) => setExtraForm((current) => ({ ...current, personId: event.target.value }))}
-              className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-sm text-white outline-none"
+              className="field-control"
             >
               {people.map((person) => (
                 <option key={person.id} value={person.id}>
@@ -725,13 +701,13 @@ function PeopleModule({
               type="month"
               value={extraForm.month}
               onChange={(event) => setExtraForm((current) => ({ ...current, month: event.target.value }))}
-              className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-sm text-white outline-none"
+              className="field-control"
             />
             <input
               value={extraForm.value}
               onChange={(event) => setExtraForm((current) => ({ ...current, value: event.target.value }))}
               placeholder="Valor extra"
-              className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-sm text-white outline-none"
+              className="field-control"
             />
             <button
               type="submit"
@@ -744,11 +720,11 @@ function PeopleModule({
         </section>
       </div>
 
-      <section className="grid gap-4 xl:grid-cols-3">
+      <section className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
         {people.map((person) => {
           const extraEntries = Object.entries(person.extraIncomeByMonth || {}).sort(([a], [b]) => b.localeCompare(a));
           return (
-            <article key={person.id} className="premium-panel rounded-[28px] p-5 sm:p-6">
+            <article key={person.id} className="premium-panel rounded-[22px] p-4 sm:p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-xs uppercase tracking-[0.18em] text-copy/55">Pessoa</p>
@@ -855,6 +831,12 @@ export default function App() {
     setActionMessage(message);
   }
 
+  useEffect(() => {
+    if (!currentUser) {
+      window.location.href = "/index.html";
+    }
+  }, [currentUser]);
+
   function updateDashboardData(actionName, updater) {
     logDashboard("Button clicked", { actionName });
     setDashboardData((current) => {
@@ -901,7 +883,7 @@ export default function App() {
 
       if (saved) {
         try {
-          const localState = normalizeDashboardState(JSON.parse(saved));
+          const localState = applyComputedDebtStatuses(normalizeDashboardState(JSON.parse(saved)));
           const withRequestedView = setCurrentView(localState, getInitialView());
           logDashboard("Loading state from localStorage", { storageKey, localState: withRequestedView });
           setDashboardData(withRequestedView);
@@ -917,7 +899,7 @@ export default function App() {
       if (cancelled) return;
 
       if (remoteState && typeof remoteState === "object") {
-        const normalized = setCurrentView(normalizeDashboardState(remoteState), getInitialView());
+        const normalized = setCurrentView(applyComputedDebtStatuses(normalizeDashboardState(remoteState)), getInitialView());
         logDashboard("Loading state from backend", normalized);
         setDashboardData(normalized);
         writeLocalSnapshot(currentUser, normalized);
@@ -1047,11 +1029,14 @@ export default function App() {
 
   const entriesTotal = dashboardEntries.reduce((sum, row) => sum + row.value, 0);
   const leisureTotal = dashboardLeisure.reduce((sum, row) => sum + row.value, 0);
+  const paidDebtTotal = dashboardDebts.filter((row) => row.status === "paid").reduce((sum, row) => sum + row.value, 0);
+  const lateDebtTotal = dashboardDebts.filter((row) => row.status === "late").reduce((sum, row) => sum + row.value, 0);
   const openDebtTotal = dashboardDebts
     .filter((row) => row.status === "open" || row.status === "late")
     .reduce((sum, row) => sum + row.value, 0);
   const capitalTotal = dashboardCapital.reduce((sum, row) => sum + row.value, 0);
   const investmentsTotal = dashboardInvestments.reduce((sum, row) => sum + row.value, 0);
+  const projectedBalance = peopleIncome + entriesTotal - openDebtTotal - leisureTotal;
 
   function handleNavigate(view) {
     logDashboard("Sidebar navigation clicked", { view });
@@ -1091,6 +1076,35 @@ export default function App() {
     const item = dashboardData.debtRows.find((current) => current.id === id);
     updateDashboardData("remove-debt", (current) => removeDebtItem(current, id));
     notify(item ? `Conta "${item.name}" removida.` : "Conta removida.");
+  }
+
+  function handleAddRecurringBill(payload) {
+    updateDashboardData("add-recurring-bill", (current) =>
+      addRecurringBillItem(current, payload, () => createId("recurring"))
+    );
+  }
+
+  function handleUpdateRecurringBill(payload) {
+    updateDashboardData("update-recurring-bill", (current) => updateRecurringBillItem(current, payload));
+  }
+
+  function handleRemoveRecurringBill(id) {
+    const item = (dashboardData.recurringBills || []).find((current) => current.id === id);
+    updateDashboardData("remove-recurring-bill", (current) => removeRecurringBillItem(current, id));
+    notify(item ? `Conta recorrente "${item.name}" removida.` : "Conta recorrente removida.");
+  }
+
+  function handleGenerateRecurringDebts(month) {
+    const before = dashboardData.debtRows.length;
+    updateDashboardData("generate-recurring-debts", (current) =>
+      generateRecurringDebtsForMonth(current, month, () => createId("debt"))
+    );
+    notify(`Geracao de contas recorrentes para ${month} solicitada. Registros anteriores: ${before}.`);
+  }
+
+  function handleCompleteInitialSetup(payload) {
+    updateDashboardData("complete-initial-setup", (current) => completeInitialSetup(current, payload, createId));
+    notify("Setup inicial concluido. O painel ja esta pronto para uso diario.");
   }
 
   function handleAddCapital(payload) {
@@ -1183,24 +1197,44 @@ export default function App() {
 
   const dashboardCards = [
     {
-      title: "Renda do periodo",
+      title: "Renda total do mes",
       value: peopleIncome + entriesTotal,
       tone: "income",
     },
     {
-      title: "Saidas do periodo",
-      value: leisureTotal + openDebtTotal,
+      title: "Saidas pagas",
+      value: paidDebtTotal,
+      tone: "success",
+    },
+    {
+      title: "Contas abertas",
+      value: openDebtTotal,
       tone: "danger",
     },
     {
-      title: "Capital filtrado",
+      title: "Contas atrasadas",
+      value: lateDebtTotal,
+      tone: "danger",
+    },
+    {
+      title: "Saldo previsto",
+      value: projectedBalance,
+      tone: projectedBalance >= 0 ? "success" : "danger",
+    },
+    {
+      title: "Capital acumulado",
       value: capitalTotal,
       tone: "success",
     },
     {
-      title: "Investimentos",
+      title: "Total investido",
       value: investmentsTotal,
       tone: "info",
+    },
+    {
+      title: "Gastos com lazer",
+      value: leisureTotal,
+      tone: "income",
     },
   ];
 
@@ -1314,13 +1348,13 @@ export default function App() {
   ];
 
   const headerControls = (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-4">
       <label className="grid gap-2">
         <span className="text-xs uppercase tracking-[0.16em] text-copy/55">Pessoa ativa</span>
         <select
           value={dashboardData.selectedPersonId}
           onChange={(event) => handleSetSelectedPerson(event.target.value)}
-          className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-sm text-white outline-none"
+          className="field-control"
         >
           {dashboardData.people.map((person) => (
             <option key={person.id} value={person.id}>
@@ -1337,7 +1371,7 @@ export default function App() {
             <select
               value={dashboardData.dashboardFilters.personId}
               onChange={(event) => handleSetDashboardFilter("personId", event.target.value)}
-              className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-sm text-white outline-none"
+              className="field-control"
             >
               <option value="all">Todas</option>
               {dashboardData.people.map((person) => (
@@ -1354,7 +1388,7 @@ export default function App() {
               type="month"
               value={dashboardData.dashboardFilters.month}
               onChange={(event) => handleSetDashboardFilter("month", event.target.value)}
-              className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-sm text-white outline-none"
+              className="field-control"
             />
           </label>
 
@@ -1363,7 +1397,7 @@ export default function App() {
             <select
               value={dashboardData.dashboardFilters.category}
               onChange={(event) => handleSetDashboardFilter("category", event.target.value)}
-              className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-sm text-white outline-none"
+              className="field-control"
             >
               {availableCategories.map((category) => (
                 <option key={category} value={category}>
@@ -1378,7 +1412,7 @@ export default function App() {
             <select
               value={dashboardData.dashboardFilters.status}
               onChange={(event) => handleSetDashboardFilter("status", event.target.value)}
-              className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-sm text-white outline-none"
+              className="field-control"
             >
               <option value="all">Todos</option>
               <option value="paid">Pagas</option>
@@ -1389,16 +1423,16 @@ export default function App() {
         </>
       ) : (
         <>
-          <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-copy/80">
+          <div className="muted-tile">
             Mes base do resumo: <strong className="text-white">{dashboardData.dashboardFilters.month}</strong>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-copy/80">
+          <div className="muted-tile">
             Salario fixo no resumo:{" "}
             <strong className="text-white">
               {dashboardData.preferences.includeFixedSalary ? "incluido" : "desligado"}
             </strong>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-copy/80">
+          <div className="muted-tile">
             Auto-sync:{" "}
             <strong className="text-white">{dashboardData.preferences.autoSync ? "ativo" : "desligado"}</strong>
           </div>
@@ -1438,6 +1472,17 @@ export default function App() {
       return (
         <>
           <OverviewCards cards={accountsCards} />
+          <RecurringBillsPanel
+            rows={dashboardData.recurringBills || []}
+            people={dashboardData.people}
+            selectedPersonId={dashboardData.selectedPersonId}
+            currentMonth={dashboardData.dashboardFilters.month}
+            onAdd={handleAddRecurringBill}
+            onUpdate={handleUpdateRecurringBill}
+            onRemove={handleRemoveRecurringBill}
+            onGenerateMonth={handleGenerateRecurringDebts}
+            onNotify={notify}
+          />
           <DebtsTable
             rows={sortByMonthDesc(dashboardData.debtRows)}
             people={dashboardData.people}
@@ -1455,7 +1500,7 @@ export default function App() {
       return (
         <>
           <OverviewCards cards={capitalCards} />
-          <section className="grid gap-4 xl:grid-cols-[1.02fr_0.98fr]">
+          <section className="grid gap-4 2xl:grid-cols-[1.02fr_0.98fr]">
             <CapitalModule
               rows={sortByMonthDesc(dashboardData.capitalItems)}
               people={dashboardData.people}
@@ -1521,62 +1566,25 @@ export default function App() {
       <>
         <OverviewCards cards={dashboardCards} />
 
-        <section className="grid gap-4 xl:grid-cols-[1.02fr_0.98fr]">
-          <DashboardMiniChart
-            rows={[
-              { label: "Renda fixa e extras", value: peopleIncome, barClass: "bg-success" },
-              { label: "Entradas variaveis", value: entriesTotal, barClass: "bg-info" },
-              { label: "Contas abertas", value: openDebtTotal, barClass: "bg-danger" },
-              { label: "Capital", value: capitalTotal, barClass: "bg-income" },
-            ]}
-          />
+        {!dashboardData.preferences.setupCompleted ? (
+          <InitialSetupPanel onComplete={handleCompleteInitialSetup} />
+        ) : null}
 
-          <ReadOnlyLedgerSummary
-            title="Entradas em destaque"
-            description="Ultimos ganhos conforme os filtros globais do dashboard."
-            rows={dashboardEntries.slice(0, 5).map((item) => ({
-              ...item,
-              subtitle: `${getPersonName(dashboardData.people, item.personId)} - ${item.month}`,
-            }))}
-            emptyMessage="Nenhuma entrada encontrada para os filtros atuais."
-          />
-        </section>
-
-        <section className="grid gap-4 xl:grid-cols-[0.98fr_1.02fr]">
-          <ReadOnlyLedgerSummary
-            title="Capital filtrado"
-            description="Snapshot patrimonial somente leitura com base nos filtros aplicados."
-            rows={dashboardCapital.slice(0, 5).map((item) => ({
-              id: item.id,
-              label: item.label,
-              category: item.category,
-              subtitle: `${getPersonName(dashboardData.people, item.personId)} - ${item.month}`,
-              value: item.value,
-            }))}
-            emptyMessage="Nenhum item de capital no recorte atual."
-          />
-
-          <ReadOnlyLedgerSummary
-            title="Investimentos filtrados"
-            description="Visual rapido dos ativos acompanhados no periodo."
-            rows={dashboardInvestments.slice(0, 5).map((item) => ({
-              id: item.id,
-              label: item.name,
-              category: item.category,
-              subtitle: `${getPersonName(dashboardData.people, item.personId)} - rendimento ${item.yield}`,
-              value: item.value,
-            }))}
-            emptyMessage="Nenhum investimento corresponde aos filtros atuais."
-          />
-        </section>
-
-        <DebtsTable
-          rows={dashboardDebts}
+        <DashboardOverview
+          month={dashboardData.dashboardFilters.month}
           people={dashboardData.people}
-          selectedPersonId={dashboardData.selectedPersonId}
-          readOnly
-          title="Contas no resumo"
-          description="Tabela somente leitura respeitando os filtros globais do dashboard."
+          debts={dashboardDebts}
+          capitalItems={dashboardCapital}
+          investmentItems={dashboardInvestments}
+          leisureRows={dashboardLeisure}
+          incomeTotal={peopleIncome + entriesTotal}
+          paidDebtTotal={paidDebtTotal}
+          openDebtTotal={openDebtTotal}
+          lateDebtTotal={lateDebtTotal}
+          projectedBalance={projectedBalance}
+          capitalTotal={capitalTotal}
+          investmentsTotal={investmentsTotal}
+          onNavigate={handleNavigate}
         />
       </>
     );
@@ -1589,7 +1597,7 @@ export default function App() {
         <div className="absolute bottom-[-120px] right-[-80px] h-80 w-80 rounded-full bg-success/10 blur-3xl" />
       </div>
 
-      <div className="relative mx-auto grid min-h-screen max-w-[1540px] gap-4 px-3 py-4 md:grid-cols-[290px_minmax(0,1fr)] md:px-4">
+      <div className="relative grid min-h-screen w-full gap-3 px-3 py-3 md:grid-cols-[248px_minmax(0,1fr)] lg:gap-4 lg:px-4">
         <Sidebar
           open={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
@@ -1602,7 +1610,7 @@ export default function App() {
           onNavigateSettings={handleNavigateSettings}
         />
 
-        <main className="min-w-0 space-y-4">
+        <main className="min-w-0 space-y-3 lg:space-y-4">
           <HeaderPanel
             title={viewTitles[dashboardData.currentView]}
             description={viewDescriptions[dashboardData.currentView]}
@@ -1617,7 +1625,7 @@ export default function App() {
             </section>
           ) : null}
 
-          <section className="rounded-[22px] border border-white/10 bg-white/5 px-4 py-3 text-sm text-copy/80">
+          <section className="rounded-[18px] border border-white/10 bg-white/5 px-4 py-3 text-sm text-copy/80">
             Status de sincronizacao: <strong className="text-white">{syncStatus}</strong>
           </section>
 

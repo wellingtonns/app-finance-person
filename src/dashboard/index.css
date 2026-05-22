@@ -22,6 +22,12 @@
   select {
     @apply font-body;
   }
+
+  input,
+  select,
+  button {
+    min-width: 0;
+  }
 }
 
 @layer components {
@@ -32,6 +38,14 @@
 
   .premium-card {
     @apply shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_12px_26px_rgba(0,0,0,0.24)];
+  }
+
+  .field-control {
+    @apply min-h-11 w-full rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-sm text-white outline-none;
+  }
+
+  .muted-tile {
+    @apply rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-copy/80;
   }
 }
 

@@ -1,10 +1,5 @@
 ﻿const sessionKey = "controle-gastos-session-v1";
 
-const allowedUsers = [
-  { username: "andressa", password: "Wellington@15" },
-  { username: "wellington", password: "Andress@15" },
-];
-
 function normalize(value) {
   return String(value || "").trim().toLowerCase();
 }
@@ -30,10 +25,6 @@ function getSession() {
   return normalize(localStorage.getItem(sessionKey) || sessionStorage.getItem(sessionKey) || getCookie(sessionKey));
 }
 
-function isAllowedUser(username) {
-  return allowedUsers.some((item) => item.username === username);
-}
-
 function goDashboard() {
   const user = getSession();
   const targetUrl = new URL("dashboard.html", window.location.href);
@@ -55,26 +46,38 @@ function bootstrapAuth() {
   const passInput = document.getElementById("login-password");
 
   const existing = getSession();
-  if (isAllowedUser(existing)) {
+  if (existing) {
     goDashboard();
     return;
   }
 
-  form.addEventListener("submit", (event) => {
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
 
     const username = normalize(userInput.value);
     const password = String(passInput.value || "");
-    const isValid = allowedUsers.some((item) => item.username === username && item.password === password);
+    status.textContent = "Validando acesso...";
 
-    if (!isValid) {
-      status.textContent = "Usuário ou senha inválidos.";
+    try {
+      const response = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok || !payload.ok) {
+        status.textContent = payload.error || "Usuario ou senha invalidos.";
+        return;
+      }
+
+      setSession(payload.user || username);
+      status.textContent = "Login realizado. Abrindo dashboard...";
+      goDashboard();
+    } catch {
+      status.textContent = "Nao foi possivel validar o login agora.";
       return;
     }
-
-    setSession(username);
-    status.textContent = "Login realizado. Abrindo dashboard...";
-    goDashboard();
   });
 }
 

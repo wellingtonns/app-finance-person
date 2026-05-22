@@ -37,11 +37,11 @@ function DebtForm({
   onCancel,
 }) {
   return (
-    <form onSubmit={onSubmit} className="mt-4 grid gap-3 xl:grid-cols-[170px_minmax(0,1fr)_150px_140px_170px_150px_auto_auto]">
+    <form onSubmit={onSubmit} className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-[150px_minmax(180px,1fr)_140px_120px_150px_130px_auto_auto]">
       <select
         value={form.personId}
         onChange={(event) => setForm((current) => ({ ...current, personId: event.target.value }))}
-        className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-sm text-white outline-none"
+        className="field-control"
       >
         {people.map((person) => (
           <option key={person.id} value={person.id}>
@@ -53,19 +53,19 @@ function DebtForm({
         value={form.name}
         onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
         placeholder="Nome da conta"
-        className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-sm text-white outline-none"
+        className="field-control"
       />
       <input
         value={form.category}
         onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))}
         placeholder="Categoria"
-        className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-sm text-white outline-none"
+        className="field-control"
       />
       <input
         value={form.value}
         onChange={(event) => setForm((current) => ({ ...current, value: event.target.value }))}
         placeholder="Valor"
-        className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-sm text-white outline-none"
+        className="field-control"
       />
       <input
         type="date"
@@ -77,12 +77,12 @@ function DebtForm({
             month: event.target.value ? event.target.value.slice(0, 7) : current.month,
           }))
         }
-        className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-sm text-white outline-none"
+        className="field-control"
       />
       <select
         value={form.status}
         onChange={(event) => setForm((current) => ({ ...current, status: event.target.value }))}
-        className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-sm text-white outline-none"
+        className="field-control"
       >
         <option value="open">A vencer</option>
         <option value="paid">Paga</option>
@@ -210,7 +210,7 @@ export default function DebtsTable({
   }
 
   return (
-    <section className="premium-panel rounded-[30px] p-5 sm:p-6">
+    <section className="premium-panel rounded-[22px] p-4 sm:p-5">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h3 className="font-display text-[2rem] font-bold text-white">{title}</h3>
@@ -224,11 +224,11 @@ export default function DebtsTable({
 
       {!readOnly ? (
         <>
-          <div className="mt-4 grid gap-3 xl:grid-cols-[190px_170px_170px_1fr_auto_auto]">
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-[170px_150px_150px_minmax(0,1fr)_auto_auto]">
             <select
               value={personFilter}
               onChange={(event) => setPersonFilter(event.target.value)}
-              className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-sm text-white outline-none"
+              className="field-control"
             >
               <option value="selected">Pessoa selecionada</option>
               <option value="all">Todas as pessoas</option>
@@ -242,7 +242,7 @@ export default function DebtsTable({
             <select
               value={statusFilter}
               onChange={(event) => setStatusFilter(event.target.value)}
-              className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-sm text-white outline-none"
+              className="field-control"
             >
               {Object.entries(statusLabels).map(([value, label]) => (
                 <option key={value} value={value}>
@@ -257,7 +257,7 @@ export default function DebtsTable({
                 console.log("[dashboard] Debt month filter toggle clicked", { open: !showMonthFilter });
                 setShowMonthFilter((current) => !current);
               }}
-              className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-sm text-copy/80"
+              className="inline-flex min-h-11 items-center gap-2 rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-sm text-copy/80"
             >
               <CalendarDays className="h-4 w-4 text-info" />
               {monthFilter || "Mes"}
@@ -296,7 +296,7 @@ export default function DebtsTable({
                 type="month"
                 value={monthFilter}
                 onChange={(event) => setMonthFilter(event.target.value)}
-                className="w-full rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-sm text-white outline-none"
+                className="field-control"
               />
               <button
                 type="button"

@@ -16,7 +16,7 @@ function getClient() {
   const url = process.env.TURSO_DATABASE_URL;
   const authToken = process.env.TURSO_AUTH_TOKEN;
   if (!url || !authToken) {
-    throw new Error("Turso nao configurado.");
+    return null;
   }
   return createClient({ url, authToken });
 }
@@ -105,6 +105,13 @@ module.exports = async function handler(req, res) {
 
   try {
     const client = getClient();
+    if (!client) {
+      sendJson(res, 503, {
+        error: "Persistencia remota nao configurada.",
+        code: "REMOTE_PERSISTENCE_DISABLED",
+      });
+      return;
+    }
     await ensureSchema(client);
 
     if (req.method === "GET") {
@@ -133,9 +140,6 @@ module.exports = async function handler(req, res) {
     sendJson(res, 405, { error: "Metodo nao permitido." });
   } catch (error) {
     console.error("Erro em /api/state:", error);
-    const message = /Turso nao configurado/i.test(String(error && error.message))
-      ? "Persistencia nao configurada no Vercel (Turso)."
-      : "Falha ao processar persistencia.";
-    sendJson(res, 500, { error: message });
+    sendJson(res, 500, { error: "Falha ao processar persistencia." });
   }
 };

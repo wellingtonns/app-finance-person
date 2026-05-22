@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Database, RefreshCcw, Settings, ShieldCheck } from "lucide-react";
-import { createDashboardSnapshot, normalizeDashboardState, setDashboardFilter, setPreferenceValue } from "../dashboard/state-utils.mjs";
+import { ArrowLeft, Database, RefreshCcw, Settings, ShieldCheck, Trash2 } from "lucide-react";
+import {
+  clearFinancialData,
+  createDashboardSnapshot,
+  normalizeDashboardState,
+  setDashboardFilter,
+  setPreferenceValue,
+} from "../dashboard/state-utils.mjs";
 import { getCurrentUser } from "../dashboard/utils";
 import {
   fetchRemoteState,
@@ -306,6 +312,22 @@ export default function SettingsApp() {
               >
                 <RefreshCcw className="h-4 w-4" />
                 Revalidar persistencia
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const confirmed = window.confirm(
+                    "Deseja zerar todos os valores financeiros para iniciar os testes por pessoa?"
+                  );
+                  if (!confirmed) return;
+                  updateSettings("clear-financial-data", (current) => clearFinancialData(current));
+                  notify("Dados financeiros zerados. Pessoas e preferencias foram mantidas.");
+                }}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm font-semibold text-danger"
+              >
+                <Trash2 className="h-4 w-4" />
+                Zerar dados financeiros
               </button>
             </div>
           </section>
