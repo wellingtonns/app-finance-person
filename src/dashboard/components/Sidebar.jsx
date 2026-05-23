@@ -65,16 +65,16 @@ export default function Sidebar({
       <button
         type="button"
         onClick={() => (open ? onClose() : null)}
-        className={`fixed inset-0 z-40 bg-black/65 transition md:hidden ${open ? "opacity-100" : "pointer-events-none opacity-0"}`}
+        className={`fixed inset-0 z-40 bg-black/65 transition 2xl:hidden ${open ? "opacity-100" : "pointer-events-none opacity-0"}`}
         aria-hidden={!open}
       />
 
       <aside
-        className={`fixed inset-y-3 left-3 z-50 flex w-[248px] max-w-[calc(100vw-24px)] flex-col rounded-[22px] border border-white/10 bg-sidebar p-3 shadow-panel transition duration-300 md:sticky md:top-3 md:z-10 md:h-[calc(100vh-1.5rem)] md:w-full md:max-w-none md:translate-x-0 ${
+        className={`fixed inset-y-3 left-3 z-50 flex w-[248px] max-w-[calc(100vw-24px)] flex-col rounded-[22px] border border-white/10 bg-sidebar p-3 shadow-panel transition duration-300 2xl:sticky 2xl:top-3 2xl:z-10 2xl:h-[calc(100vh-1.5rem)] 2xl:w-full 2xl:max-w-none 2xl:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-[115%]"
         }`}
       >
-        <div className="mb-4 flex items-start justify-between md:hidden">
+        <div className="mb-4 flex items-start justify-between 2xl:hidden">
           <button
             type="button"
             className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-copy"

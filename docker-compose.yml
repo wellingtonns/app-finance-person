@@ -8,7 +8,7 @@
       TURSO_DATABASE_URL: ${TURSO_DATABASE_URL:-}
       TURSO_AUTH_TOKEN: ${TURSO_AUTH_TOKEN:-}
       APP_STATE_PREFIX: ${APP_STATE_PREFIX:-financeperson:state:v1:}
-      APP_AUTH_USERS: ${APP_AUTH_USERS:-[{"username":"wellington","password":"change-me"}]}
+      APP_AUTH_USERS: ${APP_AUTH_USERS:-[{"username":"wellington","password":"1234"}]}
     ports:
       - "8080:8080"
     restart: unless-stopped

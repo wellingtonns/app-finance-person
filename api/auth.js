@@ -1,5 +1,5 @@
 const DEFAULT_USERS = [
-  { username: "wellington", password: "change-me" },
+  { username: "wellington", password: "1234" },
 ];
 
 function parseUsers() {

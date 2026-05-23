@@ -3,30 +3,76 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login - FinancePerson</title>
-  <link rel="stylesheet" href="styles.css?v=20260407-2118" />
+  <title>Login - finpers</title>
+  <link rel="stylesheet" href="styles.css?v=20260523-0920" />
 </head>
 <body class="auth-mode">
-  <section id="auth-view" class="container auth-layout">
-    <section class="auth-stage">
-      <div class="auth-brand auth-brand-outside">
-        <img src="logo-financeperson.svg" alt="Logo FinancePerson" class="auth-logo" />
-        <strong class="auth-brand-name">FinancePerson</strong>
+  <section id="auth-view" class="auth-layout">
+    <section class="auth-login-pane">
+      <div class="auth-login-shell">
+        <a class="auth-brand" href="/" aria-label="finpers">
+          <span class="auth-logo-mark" aria-hidden="true">F</span>
+          <strong class="auth-brand-name">finpers</strong>
+        </a>
+
+        <section class="auth-login-card" aria-labelledby="auth-card-title">
+          <div class="auth-card-heading">
+            <h1 id="auth-card-title">Bem-vindo de volta!</h1>
+            <p>Faça login para acessar sua conta e continuar.</p>
+          </div>
+
+          <form id="login-form" class="auth-form">
+            <label class="auth-field">
+              <span class="auth-label">Usuário</span>
+              <span class="auth-input-wrap">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
+                <input id="login-username" type="text" placeholder="Digite seu usuário" autocomplete="username" required />
+              </span>
+            </label>
+            <label class="auth-field">
+              <span class="auth-label">Senha</span>
+              <span class="auth-input-wrap">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <input id="login-password" type="password" placeholder="Digite sua senha" autocomplete="current-password" required />
+                <svg class="auth-eye-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+              </span>
+            </label>
+
+            <div class="auth-options">
+              <label class="auth-check">
+                <input id="login-remember" type="checkbox" checked />
+                <span>Lembrar-me</span>
+              </label>
+              <a href="#" class="auth-link">Esqueceu sua senha?</a>
+            </div>
+
+          <button type="submit" class="auth-submit">
+            <span>Entrar</span>
+          </button>
+            <div class="auth-divider"><span>ou</span></div>
+            <button type="button" class="auth-sso">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 7v10l8 4 8-4V7l-8-4Z"/><path d="m4 7 8 4 8-4"/><path d="M12 11v10"/></svg>
+              Entrar com SSO
+            </button>
+          </form>
+          <p id="auth-status" class="list-meta auth-status"></p>
+        </section>
+
+        <p class="auth-footnote">Precisa de ajuda? <a href="#">Fale com nosso suporte</a></p>
       </div>
-      <section class="auth-login-card">
-        <h2 id="auth-card-title">Login</h2>
-        <form id="login-form" class="auth-form">
-          <label class="auth-field">
-            <input id="login-username" type="text" placeholder="Digite seu usuário" required />
-          </label>
-          <label class="auth-field">
-            <input id="login-password" type="password" placeholder="Digite sua senha" required />
-          </label>
-          <button type="submit" class="auth-submit">Continuar</button>
-        </form>
-        <p id="auth-status" class="list-meta auth-status"></p>
-      </section>
     </section>
+
+    <aside class="auth-hero-pane" aria-label="finpers experiencia premium">
+      <div class="auth-hero-photo" role="img" aria-label="Duas pessoas felizes analisando financas em um notebook"></div>
+      <div class="auth-hero-line" aria-hidden="true"></div>
+      <div class="auth-floating-card">
+        <span class="auth-card-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5"/><path d="M4 19h16"/><path d="m7 15 4-4 3 3 5-7"/><path d="M17 7h2v2"/></svg>
+        </span>
+        <strong>Gestão inteligente</strong>
+        <small>Tenha controle total das suas finanças com praticidade e segurança.</small>
+      </div>
+    </aside>
   </section>
 
   <script type="module" src="/auth.js"></script>

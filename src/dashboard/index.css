@@ -11,10 +11,17 @@
 
   html {
     color-scheme: dark;
+    overflow-x: hidden;
   }
 
   body {
     @apply m-0 bg-shell text-copy antialiased;
+    overflow-x: hidden;
+  }
+
+  #root {
+    width: 100%;
+    min-width: 0;
   }
 
   button,
@@ -34,6 +41,7 @@
   .premium-panel {
     @apply border border-white/10 bg-panel shadow-glow;
     background-image: linear-gradient(180deg, rgba(18, 24, 35, 0.98) 0%, rgba(12, 17, 26, 0.98) 100%);
+    min-width: 0;
   }
 
   .premium-card {
@@ -42,10 +50,24 @@
 
   .field-control {
     @apply min-h-11 w-full rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-sm text-white outline-none;
+    max-width: 100%;
   }
 
   .muted-tile {
     @apply rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-copy/80;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .premium-panel {
+    border-radius: 18px !important;
+  }
+
+  .field-control {
+    min-height: 42px;
+    border-radius: 14px;
+    padding: 0.65rem 0.85rem;
   }
 }
 

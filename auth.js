@@ -4,11 +4,16 @@ function normalize(value) {
   return String(value || "").trim().toLowerCase();
 }
 
-function setSession(username) {
+function setSession(username, remember = true) {
   const user = normalize(username);
-  localStorage.setItem(sessionKey, user);
   sessionStorage.setItem(sessionKey, user);
-  document.cookie = `${sessionKey}=${encodeURIComponent(user)}; path=/; max-age=2592000; SameSite=Lax`;
+  if (remember) {
+    localStorage.setItem(sessionKey, user);
+    document.cookie = `${sessionKey}=${encodeURIComponent(user)}; path=/; max-age=2592000; SameSite=Lax`;
+  } else {
+    localStorage.removeItem(sessionKey);
+    document.cookie = `${sessionKey}=; path=/; max-age=0; SameSite=Lax`;
+  }
 }
 
 function getCookie(name) {
@@ -44,6 +49,8 @@ function bootstrapAuth() {
   const form = document.getElementById("login-form");
   const userInput = document.getElementById("login-username");
   const passInput = document.getElementById("login-password");
+  const rememberInput = document.getElementById("login-remember");
+  const ssoButton = document.querySelector(".auth-sso");
 
   const existing = getSession();
   if (existing) {
@@ -71,13 +78,17 @@ function bootstrapAuth() {
         return;
       }
 
-      setSession(payload.user || username);
+      setSession(payload.user || username, Boolean(rememberInput?.checked));
       status.textContent = "Login realizado. Abrindo dashboard...";
       goDashboard();
     } catch {
       status.textContent = "Nao foi possivel validar o login agora.";
       return;
     }
+  });
+
+  ssoButton?.addEventListener("click", () => {
+    status.textContent = "SSO ainda nao esta configurado para este ambiente.";
   });
 }
 

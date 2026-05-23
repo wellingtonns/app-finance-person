@@ -6,9 +6,9 @@ export default function AppShell({ sidebar, children }) {
         <div className="absolute bottom-[-120px] right-[-80px] h-80 w-80 rounded-full bg-success/10 blur-3xl" />
       </div>
 
-      <div className="relative grid min-h-screen w-full gap-3 px-3 py-3 md:grid-cols-[248px_minmax(0,1fr)] lg:gap-4 lg:px-4">
+      <div className="relative grid min-h-screen w-full gap-3 px-3 py-3 lg:gap-4 lg:px-4 2xl:grid-cols-[248px_minmax(0,1fr)]">
         {sidebar}
-        <main className="min-w-0 space-y-3 lg:space-y-4">{children}</main>
+        <main className="w-full min-w-0 space-y-3 overflow-hidden lg:space-y-4">{children}</main>
       </div>
     </div>
   );
