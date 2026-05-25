@@ -3,7 +3,7 @@ import { formatCurrency } from "../utils";
 export default function DashboardChart({ income, debts, balance }) {
   const rows = [
     { label: "Entradas", value: income, color: "bg-success" },
-    { label: "Saidas", value: debts, color: "bg-info" },
+    { label: "Saídas", value: debts, color: "bg-info" },
     { label: "Saldo", value: balance, color: "bg-[#9f6bff]" },
   ];
   const maxValue = Math.max(...rows.map((row) => Math.abs(row.value)), 1);

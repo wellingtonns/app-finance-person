@@ -73,15 +73,15 @@ const viewDescriptions = {
   dashboard:
     "Resumo somente leitura com filtros globais para acompanhar renda, contas, capital e investimentos sem editar registros daqui.",
   entradas:
-    "Cadastre ganhos variaveis, revise registros do mes e remova entradas antigas sem misturar isso com o resumo principal.",
+    "Cadastre ganhos variáveis, revise registros do mês e remova entradas antigas sem misturar isso com o resumo principal.",
   contas:
-    "Controle vencimentos, status e valores das contas por pessoa, com filtros e manutencao completa em um unico modulo.",
+    "Controle vencimentos, status e valores das contas por pessoa, com filtros e manutenção completa em um único módulo.",
   capital:
-    "Mantenha a composicao do capital e o planejamento de lazer juntos, mas com acoes apenas aqui, sem poluir o dashboard.",
+    "Mantenha a composição do capital e o planejamento de lazer juntos, mas com ações apenas aqui, sem poluir o dashboard.",
   investimentos:
-    "Gerencie a carteira, valores aplicados e categorias dos ativos com edicao direta dentro desta tela.",
+    "Gerencie a carteira, valores aplicados e categorias dos ativos com edição direta dentro desta tela.",
   pessoas:
-    "Cadastre pessoas, salario fixo e renda extra por mes para enriquecer os totais do painel e manter o fluxo organizado.",
+    "Cadastre pessoas, salário fixo e renda extra por mês para enriquecer os totais do painel e manter o fluxo organizado.",
 };
 
 function getInitialView() {
@@ -187,7 +187,7 @@ function CapitalModule({
     console.log("[dashboard] Capital save clicked", payload);
     if (!payload.personId || !payload.label || !Number.isFinite(payload.value) || payload.value <= 0) {
       console.warn("[dashboard] Invalid capital payload", payload);
-      onNotify("Preencha pessoa, descricao e valor valido para salvar o capital.");
+      onNotify("Preencha pessoa, descrição e valor válido para salvar o capital.");
       return;
     }
 
@@ -295,9 +295,9 @@ function CapitalModule({
           <span>Pessoa</span>
           <span>Item</span>
           <span>Categoria</span>
-          <span>Mes</span>
+          <span>Mês</span>
           <span>Valor</span>
-          <span className="lg:text-right">Acoes</span>
+          <span className="lg:text-right">Ações</span>
         </div>
         <ul>
           {rows.length ? (
@@ -413,7 +413,7 @@ function InvestmentsModule({
     console.log("[dashboard] Investment save clicked", payload);
     if (!payload.personId || !payload.name || !Number.isFinite(payload.value) || payload.value <= 0) {
       console.warn("[dashboard] Invalid investment payload", payload);
-      onNotify("Preencha pessoa, ativo e valor valido para salvar o investimento.");
+      onNotify("Preencha pessoa, ativo e valor válido para salvar o investimento.");
       return;
     }
 
@@ -545,9 +545,9 @@ function InvestmentsModule({
                   </button>
                 </div>
               </div>
-              <p className="mt-4 text-sm text-copy/70">Mes de referencia</p>
+              <p className="mt-4 text-sm text-copy/70">Mês de referência</p>
               <strong className="mt-1 block text-white">{row.month}</strong>
-              <p className="mt-4 text-sm text-copy/70">Posicao atual</p>
+              <p className="mt-4 text-sm text-copy/70">Posição atual</p>
               <strong className="mt-1 block text-2xl font-bold text-white">{formatCurrency(row.value)}</strong>
               <p className="mt-4 text-sm text-copy/70">Rendimento estimado</p>
               <span className="mt-1 inline-flex rounded-full border border-success/30 bg-success/15 px-3 py-1 text-sm font-semibold text-success">
@@ -601,7 +601,7 @@ function PeopleModule({
     console.log("[dashboard] Person save clicked", payload);
     if (!payload.name || !Number.isFinite(payload.fixedSalary) || payload.fixedSalary < 0) {
       console.warn("[dashboard] Invalid person payload", payload);
-      onNotify("Informe nome e salario fixo valido para salvar a pessoa.");
+      onNotify("Informe nome e salário fixo válido para salvar a pessoa.");
       return;
     }
 
@@ -633,7 +633,7 @@ function PeopleModule({
     console.log("[dashboard] Extra income save clicked", payload);
     if (!payload.personId || !payload.month || !Number.isFinite(payload.value) || payload.value < 0) {
       console.warn("[dashboard] Invalid extra income payload", payload);
-      onNotify("Informe pessoa, mes e valor valido para registrar a renda extra.");
+      onNotify("Informe pessoa, mês e valor válido para registrar a renda extra.");
       return;
     }
     onSetExtraIncome(payload);
@@ -646,7 +646,7 @@ function PeopleModule({
       <div className="grid gap-4 2xl:grid-cols-[0.92fr_1.08fr]">
         <section className="premium-panel rounded-[22px] p-4 sm:p-5">
           <h3 className="font-display text-[1.9rem] font-bold text-white">Cadastro de pessoas</h3>
-          <p className="mt-1 text-base text-copy/78">Nome e salario fixo entram aqui. A renda extra fica separada por mes.</p>
+          <p className="mt-1 text-base text-copy/78">Nome e salário fixo entram aqui. A renda extra fica separada por mês.</p>
 
           <form
             onSubmit={handleSavePerson}
@@ -661,7 +661,7 @@ function PeopleModule({
             <input
               value={personForm.fixedSalary}
               onChange={(event) => setPersonForm((current) => ({ ...current, fixedSalary: event.target.value }))}
-              placeholder="Salario fixo"
+              placeholder="Salário fixo"
               className="field-control"
             />
             <button
@@ -764,7 +764,7 @@ function PeopleModule({
 
               <div className="mt-5 grid gap-3">
                 <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-copy/70">
-                  Salario fixo: <strong className="text-white">{formatCurrency(person.fixedSalary)}</strong>
+                  Salário fixo: <strong className="text-white">{formatCurrency(person.fixedSalary)}</strong>
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-copy/70">
                   Renda extra em {currentMonth}:{" "}
@@ -907,11 +907,11 @@ export default function App() {
       } else if (remoteState === null) {
         setSyncStatus(
           localLoaded
-            ? "Dados locais prontos. Sincronizacao remota disponivel."
-            : "Novo painel iniciado. Sincronizacao remota disponivel."
+            ? "Dados locais prontos. Sincronização remota disponível."
+            : "Novo painel iniciado. Sincronização remota disponível."
         );
       } else {
-        setSyncStatus("Persistencia remota indisponivel. Dados salvos localmente.");
+        setSyncStatus("Persistência remota indisponível. Dados salvos localmente.");
       }
 
       setIsHydrated(true);
@@ -941,7 +941,7 @@ export default function App() {
     }
 
     if (!dashboardData.preferences.autoSync) {
-      setSyncStatus("Sincronizacao automatica desativada. Dados salvos localmente.");
+      setSyncStatus("Sincronização automática desativada. Dados salvos localmente.");
       return;
     }
 
@@ -960,7 +960,7 @@ export default function App() {
         setSyncStatus("Dados sincronizados com o banco.");
       } catch (error) {
         console.error("[dashboard] Remote sync failed", error);
-        setSyncStatus("Persistencia remota indisponivel. Dados salvos localmente.");
+        setSyncStatus("Persistência remota indisponível. Dados salvos localmente.");
       } finally {
         saveInFlightRef.current = false;
       }
@@ -1160,7 +1160,7 @@ export default function App() {
 
   function handleRemovePerson(personId) {
     if (dashboardData.people.length <= 1) {
-      notify("Nao e possivel remover a ultima pessoa.");
+      notify("Não é possível remover a última pessoa.");
       return;
     }
     const name = getPersonName(dashboardData.people, personId);
@@ -1186,17 +1186,17 @@ export default function App() {
 
   function handleRefreshSync() {
     updateDashboardData("manual-refresh-sync", (current) => ({ ...current }));
-    notify("Sincronizacao revalidada. Dados locais preservados.");
+    notify("Sincronização revalidada. Dados locais preservados.");
   }
 
   const dashboardCards = [
     {
-      title: "Renda total do mes",
+      title: "Renda total do mês",
       value: peopleIncome + entriesTotal,
       tone: "income",
     },
     {
-      title: "Saidas pagas",
+      title: "Saídas pagas",
       value: paidDebtTotal,
       tone: "success",
     },
@@ -1223,7 +1223,7 @@ export default function App() {
   ];
 
   const entriesCards = [
-    { title: "Entradas variaveis", value: dashboardData.entries.reduce((sum, row) => sum + row.value, 0), tone: "income" },
+    { title: "Entradas variáveis", value: dashboardData.entries.reduce((sum, row) => sum + row.value, 0), tone: "income" },
     {
       title: "Renda fixa ativa",
       value: getPeopleIncomeTotal(
@@ -1316,12 +1316,12 @@ export default function App() {
   const peopleCards = [
     { title: "Pessoas cadastradas", value: dashboardData.people.length, tone: "income", format: "number" },
     {
-      title: "Salarios fixos",
+      title: "Salários fixos",
       value: dashboardData.people.reduce((sum, person) => sum + person.fixedSalary, 0),
       tone: "success",
     },
     {
-      title: "Extras no mes",
+      title: "Extras no mês",
       value: dashboardData.people.reduce(
         (sum, person) => sum + getMonthExtraIncome(person, dashboardData.dashboardFilters.month),
         0
@@ -1352,7 +1352,7 @@ export default function App() {
           </label>
 
           <label className="grid gap-2">
-            <span className="text-xs uppercase tracking-[0.16em] text-copy/55">Mes</span>
+            <span className="text-xs uppercase tracking-[0.16em] text-copy/55">Mês</span>
             <input
               type="month"
               value={dashboardData.dashboardFilters.month}
@@ -1407,10 +1407,10 @@ export default function App() {
             </select>
           </label>
           <div className="muted-tile">
-            Mes base do resumo: <strong className="text-white">{dashboardData.dashboardFilters.month}</strong>
+            Mês base do resumo: <strong className="text-white">{dashboardData.dashboardFilters.month}</strong>
           </div>
           <div className="muted-tile">
-            Salario fixo no resumo:{" "}
+            Salário fixo no resumo:{" "}
             <strong className="text-white">
               {dashboardData.preferences.includeFixedSalary ? "incluido" : "desligado"}
             </strong>
@@ -1430,10 +1430,10 @@ export default function App() {
           activeDashboardPersonId === "all"
             ? "todas"
             : getPersonName(dashboardData.people, activeDashboardPersonId)
-        }, mes ${dashboardData.dashboardFilters.month}, categoria ${dashboardData.dashboardFilters.category}, status ${
+        }, mês ${dashboardData.dashboardFilters.month}, categoria ${dashboardData.dashboardFilters.category}, status ${
           dashboardData.dashboardFilters.status
         }.`
-      : `Pessoa ativa: ${selectedPersonName}. Ajustes de sincronizacao e preferencias ficam em /settings.`;
+      : `Pessoa ativa: ${selectedPersonName}. Ajustes de sincronização e preferências ficam em /settings.`;
 
   function renderView() {
     if (dashboardData.currentView === "entradas") {
@@ -1606,7 +1606,7 @@ export default function App() {
           ) : null}
 
           <section className="rounded-[18px] border border-white/10 bg-white/5 px-4 py-3 text-sm text-copy/80">
-            Status de sincronizacao: <strong className="text-white">{syncStatus}</strong>
+            Status de sincronização: <strong className="text-white">{syncStatus}</strong>
           </section>
 
           {renderView()}

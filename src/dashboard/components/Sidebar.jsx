@@ -122,7 +122,7 @@ export default function Sidebar({
           className="mt-2 flex w-full items-center gap-3 rounded-2xl border border-transparent px-4 py-3 text-left text-[15px] font-medium text-copy/85 transition hover:border-white/10 hover:bg-white/5"
         >
           <Settings className="h-4 w-4 text-info" />
-          <span>Configuracoes</span>
+          <span>Configurações</span>
         </button>
 
         <div className="mt-auto rounded-[20px] border border-white/10 bg-white/5 p-3">
@@ -131,7 +131,7 @@ export default function Sidebar({
               {userInitial}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs uppercase tracking-[0.2em] text-copy/55">Usuario</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-copy/55">Usuário</p>
               <p className="truncate text-base font-semibold text-white">{currentUser}</p>
               <p className="truncate text-xs text-copy/60">Pessoa ativa: {selectedPersonName}</p>
             </div>
@@ -143,7 +143,7 @@ export default function Sidebar({
                   setShowUserMenu((current) => !current);
                 }}
                 className="rounded-xl border border-white/10 bg-white/5 p-2"
-                aria-label="Abrir menu do usuario"
+                aria-label="Abrir menu do usuário"
               >
                 <Menu className="h-4 w-4" />
               </button>
@@ -154,7 +154,7 @@ export default function Sidebar({
                   onNavigateSettings();
                 }}
                 className="rounded-xl border border-white/10 bg-white/5 p-2"
-                aria-label="Abrir configuracoes"
+                aria-label="Abrir configurações"
               >
                 <Settings className="h-4 w-4" />
               </button>
@@ -167,8 +167,8 @@ export default function Sidebar({
 
           {showUserMenu ? (
             <div className="mt-4 rounded-[20px] border border-white/10 bg-[#111927] p-3">
-              <p className="text-sm font-semibold text-white">Acoes da conta</p>
-              <p className="mt-1 text-xs text-copy/65">As configuracoes ficam na pagina dedicada para manter o painel limpo.</p>
+              <p className="text-sm font-semibold text-white">Ações da conta</p>
+              <p className="mt-1 text-xs text-copy/65">As configurações ficam na página dedicada para manter o painel limpo.</p>
 
               <div className="mt-3 grid gap-2">
                 <button
@@ -180,7 +180,7 @@ export default function Sidebar({
                   className="inline-flex items-center justify-center gap-2 rounded-2xl border border-info/35 bg-info/15 px-4 py-3 text-sm font-semibold text-[#dcebff]"
                 >
                   <Settings className="h-4 w-4" />
-                  Abrir configuracoes
+                  Abrir configurações
                 </button>
 
                 <button

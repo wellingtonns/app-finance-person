@@ -33,8 +33,8 @@ export default function InitialSetupPanel({ onComplete }) {
       <form onSubmit={handleSubmit} className="grid gap-3">
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <input name="primaryName" required placeholder="Pessoa principal" className="field-control" />
-          <input name="secondaryNames" placeholder="Outras pessoas, separadas por virgula" className="field-control" />
-          <input name="fixedSalary" placeholder="Salario fixo" className="field-control" />
+          <input name="secondaryNames" placeholder="Outras pessoas, separadas por vírgula" className="field-control" />
+          <input name="fixedSalary" placeholder="Salário fixo" className="field-control" />
           <input name="extraIncome" placeholder="Renda extra inicial" className="field-control" />
         </div>
 

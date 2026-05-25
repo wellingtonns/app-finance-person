@@ -109,6 +109,13 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  if (url.pathname === "/api/auth/password") {
+    req.query = Object.fromEntries(url.searchParams.entries());
+    const adaptedResponse = createResponseAdapter(res);
+    authHandler.changePassword(req, adaptedResponse);
+    return;
+  }
+
   serveStatic(req, res, url.pathname);
 });
 

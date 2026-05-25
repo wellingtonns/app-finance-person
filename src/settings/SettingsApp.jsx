@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Database, RefreshCcw, Settings, ShieldCheck, Trash2 } from "lucide-react";
+import { ArrowLeft, Database, KeyRound, RefreshCcw, Settings, ShieldCheck, Trash2 } from "lucide-react";
 import {
   clearFinancialData,
   createDashboardSnapshot,
@@ -36,10 +36,118 @@ function PreferenceToggle({ label, description, checked, onChange }) {
   );
 }
 
+function PasswordPanel({ currentUser, onNotify }) {
+  const [form, setForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [saving, setSaving] = useState(false);
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    const currentPassword = form.currentPassword.trim();
+    const newPassword = form.newPassword.trim();
+    const confirmPassword = form.confirmPassword.trim();
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      onNotify("Preencha a senha atual, a nova senha e a confirmação.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      onNotify("A confirmação da senha não confere.");
+      return;
+    }
+    if (newPassword.length < 4) {
+      onNotify("A nova senha deve ter pelo menos 4 caracteres.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const response = await fetch("/api/auth/password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: currentUser,
+          currentPassword,
+          newPassword,
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || !payload.ok) {
+        onNotify(payload.error || "Não foi possível alterar a senha.");
+        return;
+      }
+      setForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      onNotify("Senha alterada com sucesso.");
+    } catch {
+      onNotify("Não foi possível comunicar com a API de autenticação.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section className="premium-panel rounded-[28px] p-5 sm:p-6">
+      <div className="flex items-center gap-3">
+        <span className="rounded-2xl border border-info/35 bg-info/15 p-3 text-info">
+          <KeyRound className="h-5 w-5" />
+        </span>
+        <div>
+          <h2 className="font-display text-[1.6rem] font-bold text-white sm:text-[1.9rem]">Alterar senha</h2>
+          <p className="mt-1 text-sm text-copy/70">Atualize a senha do usuário atual neste ambiente.</p>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="mt-5 grid gap-3">
+        <label className="grid gap-2">
+          <span className="text-xs uppercase tracking-[0.16em] text-copy/55">Senha atual</span>
+          <input
+            type="password"
+            value={form.currentPassword}
+            onChange={(event) => setForm((current) => ({ ...current, currentPassword: event.target.value }))}
+            className="field-control"
+            autoComplete="current-password"
+          />
+        </label>
+        <label className="grid gap-2">
+          <span className="text-xs uppercase tracking-[0.16em] text-copy/55">Nova senha</span>
+          <input
+            type="password"
+            value={form.newPassword}
+            onChange={(event) => setForm((current) => ({ ...current, newPassword: event.target.value }))}
+            className="field-control"
+            autoComplete="new-password"
+          />
+        </label>
+        <label className="grid gap-2">
+          <span className="text-xs uppercase tracking-[0.16em] text-copy/55">Confirmar nova senha</span>
+          <input
+            type="password"
+            value={form.confirmPassword}
+            onChange={(event) => setForm((current) => ({ ...current, confirmPassword: event.target.value }))}
+            className="field-control"
+            autoComplete="new-password"
+          />
+        </label>
+        <button
+          type="submit"
+          disabled={saving}
+          className="inline-flex items-center justify-center gap-2 rounded-2xl border border-info/35 bg-info/15 px-4 py-3 text-sm font-semibold text-[#dcebff] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <KeyRound className="h-4 w-4" />
+          {saving ? "Salvando..." : "Salvar nova senha"}
+        </button>
+      </form>
+    </section>
+  );
+}
+
 export default function SettingsApp() {
   const [currentUser] = useState(getCurrentUser);
   const [dashboardData, setDashboardData] = useState(() => normalizeDashboardState(undefined));
-  const [syncStatus, setSyncStatus] = useState("Carregando configuracoes...");
+  const [syncStatus, setSyncStatus] = useState("Carregando configurações...");
   const [message, setMessage] = useState("");
   const [isHydrated, setIsHydrated] = useState(false);
   const saveTimeoutRef = useRef(null);
@@ -74,7 +182,7 @@ export default function SettingsApp() {
   useEffect(() => {
     let cancelled = false;
     setIsHydrated(false);
-    setSyncStatus("Carregando configuracoes...");
+    setSyncStatus("Carregando configurações...");
 
     async function bootstrapSettings() {
       const { storageKey, saved } = readLocalSnapshot(currentUser);
@@ -85,7 +193,7 @@ export default function SettingsApp() {
           const normalized = normalizeDashboardState(JSON.parse(saved));
           setDashboardData(normalized);
           localLoaded = true;
-          setSyncStatus("Configuracoes locais carregadas.");
+          setSyncStatus("Configurações locais carregadas.");
           logDashboard("Settings loaded from localStorage", { storageKey, normalized });
         } catch (error) {
           console.error("[dashboard] Invalid settings state in localStorage", error);
@@ -100,15 +208,15 @@ export default function SettingsApp() {
         const normalized = normalizeDashboardState(remoteState);
         setDashboardData(normalized);
         writeLocalSnapshot(currentUser, normalized);
-        setSyncStatus("Configuracoes carregadas do banco.");
+        setSyncStatus("Configurações carregadas do banco.");
       } else if (remoteState === null) {
         setSyncStatus(
           localLoaded
-            ? "Configuracoes locais prontas. Sincronizacao remota disponivel."
-            : "Preferencias novas prontas para uso."
+            ? "Configurações locais prontas. Sincronização remota disponível."
+            : "Preferências novas prontas para uso."
         );
       } else {
-        setSyncStatus("Persistencia remota indisponivel. Preferencias locais ativas.");
+        setSyncStatus("Persistência remota indisponível. Preferências locais ativas.");
       }
 
       setIsHydrated(true);
@@ -137,7 +245,7 @@ export default function SettingsApp() {
     }
 
     if (!dashboardData.preferences.autoSync) {
-      setSyncStatus("Sincronizacao automatica desativada. Preferencias salvas localmente.");
+      setSyncStatus("Sincronização automática desativada. Preferências salvas localmente.");
       return;
     }
 
@@ -153,10 +261,10 @@ export default function SettingsApp() {
           saveQueuedRef.current = false;
           await pushStateToServer(currentUser, latestSnapshotRef.current);
         } while (saveQueuedRef.current);
-        setSyncStatus("Preferencias sincronizadas com o banco.");
+        setSyncStatus("Preferências sincronizadas com o banco.");
       } catch (error) {
         console.error("[dashboard] Settings remote sync failed", error);
-        setSyncStatus("Persistencia remota indisponivel. Preferencias locais ativas.");
+        setSyncStatus("Persistência remota indisponível. Preferências locais ativas.");
       } finally {
         saveInFlightRef.current = false;
       }
@@ -183,11 +291,11 @@ export default function SettingsApp() {
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-xs uppercase tracking-[0.18em] text-copy/65">
                 <Settings className="h-4 w-4 text-info" />
-                Configuracoes
+                Configurações
               </div>
-              <h1 className="mt-4 font-display text-3xl font-bold text-white sm:text-[2.4rem]">Preferencias da conta</h1>
+              <h1 className="mt-4 font-display text-3xl font-bold text-white sm:text-[2.4rem]">Preferências da conta</h1>
               <p className="mt-3 max-w-2xl text-base leading-7 text-copy/78">
-                Esta tela concentra preferencias de uso, sincronizacao e comportamento do painel sem misturar com as acoes financeiras do dia a dia.
+                Esta tela concentra preferências de uso, sincronização, segurança e comportamento do painel sem misturar com as ações financeiras do dia a dia.
               </p>
             </div>
 
@@ -209,48 +317,48 @@ export default function SettingsApp() {
 
         <div className="mt-4 grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
           <section className="premium-panel rounded-[28px] p-5 sm:p-6">
-            <h2 className="font-display text-[1.9rem] font-bold text-white">Preferencias basicas</h2>
+            <h2 className="font-display text-[1.9rem] font-bold text-white">Preferências básicas</h2>
             <div className="mt-5 grid gap-3">
               <PreferenceToggle
-                label="Incluir salario fixo no resumo"
-                description="Soma os salarios fixos cadastrados em Pessoas dentro da leitura do dashboard."
+                label="Incluir salário fixo no resumo"
+                description="Soma os salários fixos cadastrados em Pessoas dentro da leitura do dashboard."
                 checked={dashboardData.preferences.includeFixedSalary}
                 onChange={(value) => {
                   updateSettings("toggle-include-fixed-salary", (current) =>
                     setPreferenceValue(current, "includeFixedSalary", value)
                   );
-                  notify("Preferencia de salario fixo atualizada.");
+                  notify("Preferência de salário fixo atualizada.");
                 }}
               />
               <PreferenceToggle
                 label="Consolidar contas do casal"
-                description="Mantem a preferencia salva para uso futuro em consolidacoes mais avancadas."
+                description="Mantém a preferência salva para uso futuro em consolidações mais avançadas."
                 checked={dashboardData.preferences.consolidateHouseholdDebts}
                 onChange={(value) => {
                   updateSettings("toggle-consolidate-household-debts", (current) =>
                     setPreferenceValue(current, "consolidateHouseholdDebts", value)
                   );
-                  notify("Preferencia de consolidacao atualizada.");
+                  notify("Preferência de consolidação atualizada.");
                 }}
               />
               <PreferenceToggle
-                label="Sincronizacao automatica"
+                label="Sincronização automática"
                 description="Quando desativada, o app continua salvando no navegador e deixa de tentar o backend."
                 checked={dashboardData.preferences.autoSync}
                 onChange={(value) => {
                   updateSettings("toggle-auto-sync", (current) => setPreferenceValue(current, "autoSync", value));
-                  notify("Preferencia de sincronizacao atualizada.");
+                  notify("Preferência de sincronização atualizada.");
                 }}
               />
               <PreferenceToggle
-                label="Numeros compactos"
-                description="Reserva a preferencia para futuras views com cards compactados e leituras resumidas."
+                label="Números compactos"
+                description="Reserva a preferência para futuras telas com cards compactados e leituras resumidas."
                 checked={dashboardData.preferences.compactNumbers}
                 onChange={(value) => {
                   updateSettings("toggle-compact-numbers", (current) =>
                     setPreferenceValue(current, "compactNumbers", value)
                   );
-                  notify("Preferencia visual atualizada.");
+                  notify("Preferência visual atualizada.");
                 }}
               />
             </div>
@@ -261,7 +369,7 @@ export default function SettingsApp() {
 
             <div className="mt-5 grid gap-4">
               <label className="grid gap-2">
-                <span className="text-xs uppercase tracking-[0.16em] text-copy/55">Mes padrao do painel</span>
+                <span className="text-xs uppercase tracking-[0.16em] text-copy/55">Mês padrão do painel</span>
                 <input
                   type="month"
                   value={dashboardData.dashboardFilters.month}
@@ -269,7 +377,7 @@ export default function SettingsApp() {
                     updateSettings("set-default-month", (current) =>
                       setDashboardFilter(current, "month", event.target.value)
                     );
-                    notify("Mes padrao do painel atualizado.");
+                    notify("Mês padrão do painel atualizado.");
                   }}
                   className="rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-sm text-white outline-none"
                 />
@@ -282,7 +390,7 @@ export default function SettingsApp() {
                       <ShieldCheck className="h-5 w-5" />
                     </span>
                     <div>
-                      <p className="text-sm text-copy/70">Usuario atual</p>
+                      <p className="text-sm text-copy/70">Usuário atual</p>
                       <strong className="text-white">{currentUser}</strong>
                     </div>
                   </div>
@@ -294,7 +402,7 @@ export default function SettingsApp() {
                       <Database className="h-5 w-5" />
                     </span>
                     <div>
-                      <p className="text-sm text-copy/70">Status da persistencia</p>
+                      <p className="text-sm text-copy/70">Status da persistência</p>
                       <strong className="text-white">{syncStatus}</strong>
                     </div>
                   </div>
@@ -305,13 +413,13 @@ export default function SettingsApp() {
                 type="button"
                 onClick={() => {
                   console.log("[dashboard] Settings manual sync clicked");
-                  notify("Sincronizacao sera tentada automaticamente apos qualquer alteracao.");
+                  notify("A sincronização será tentada automaticamente após qualquer alteração.");
                   updateSettings("touch-settings", (current) => ({ ...current }));
                 }}
                 className="inline-flex items-center justify-center gap-2 rounded-2xl border border-info/35 bg-info/15 px-4 py-3 text-sm font-semibold text-[#dcebff]"
               >
                 <RefreshCcw className="h-4 w-4" />
-                Revalidar persistencia
+                Revalidar persistência
               </button>
 
               <button
@@ -322,7 +430,7 @@ export default function SettingsApp() {
                   );
                   if (!confirmed) return;
                   updateSettings("clear-financial-data", (current) => clearFinancialData(current));
-                  notify("Dados financeiros zerados. Pessoas e preferencias foram mantidas.");
+                  notify("Dados financeiros zerados. Pessoas e preferências foram mantidas.");
                 }}
                 className="inline-flex items-center justify-center gap-2 rounded-2xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm font-semibold text-danger"
               >
@@ -331,6 +439,10 @@ export default function SettingsApp() {
               </button>
             </div>
           </section>
+        </div>
+
+        <div className="mt-4 grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+          <PasswordPanel currentUser={currentUser} onNotify={notify} />
         </div>
       </div>
     </div>

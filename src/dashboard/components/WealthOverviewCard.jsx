@@ -20,10 +20,10 @@ export default function WealthOverviewCard({ capitalTotal, investmentsTotal, cap
     <div className="grid gap-3">
       <WealthRow icon={Landmark} label="Capital acumulado" value={formatCurrency(capitalTotal)} />
       <WealthRow icon={TrendingUp} label="Total investido" value={formatCurrency(investmentsTotal)} tone="text-info" />
-      <WealthRow icon={BadgeDollarSign} label="Rendimento do mes" value={formatCurrency(0)} tone="text-success" />
+      <WealthRow icon={BadgeDollarSign} label="Rendimento do mês" value={formatCurrency(0)} tone="text-success" />
       <WealthRow
         icon={ShieldCheck}
-        label="Reserva de emergencia"
+        label="Reserva de emergência"
         value={`${capitalCount + investmentCount} registro(s)`}
         tone="text-[#9f6bff]"
       />

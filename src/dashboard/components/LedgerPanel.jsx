@@ -182,7 +182,7 @@ export function EntriesModule({
     console.log("[dashboard] Entry save clicked", payload);
     if (!payload.label || !payload.personId || !Number.isFinite(payload.value) || payload.value <= 0) {
       console.warn("[dashboard] Invalid entry payload", payload);
-      onNotify?.("Preencha pessoa, descricao e valor valido para salvar a entrada.");
+      onNotify?.("Preencha pessoa, descrição e valor válido para salvar a entrada.");
       return;
     }
 
@@ -201,10 +201,10 @@ export function EntriesModule({
       <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h3 className="font-display text-[1.9rem] font-bold text-white">Entradas e ganhos</h3>
-          <p className="mt-1 text-base text-copy/78">Cadastre ganhos variaveis e acompanhe o total do mes.</p>
+          <p className="mt-1 text-base text-copy/78">Cadastre ganhos variáveis e acompanhe o total do mês.</p>
         </div>
         <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-copy/70">
-          Total do modulo: <strong className="text-white">{formatCurrency(total)}</strong>
+          Total do módulo: <strong className="text-white">{formatCurrency(total)}</strong>
         </div>
       </div>
 
@@ -345,7 +345,7 @@ export function LeisureModule({
     console.log("[dashboard] Leisure save clicked", payload);
     if (!payload.label || !payload.personId || !Number.isFinite(payload.value) || payload.value <= 0) {
       console.warn("[dashboard] Invalid leisure payload", payload);
-      onNotify?.("Preencha pessoa, descricao e valor valido para salvar o lazer.");
+      onNotify?.("Preencha pessoa, descrição e valor válido para salvar o lazer.");
       return;
     }
 

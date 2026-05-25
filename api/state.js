@@ -107,7 +107,7 @@ module.exports = async function handler(req, res) {
     const client = getClient();
     if (!client) {
       sendJson(res, 503, {
-        error: "Persistencia remota nao configurada.",
+        error: "Persistência remota não configurada.",
         code: "REMOTE_PERSISTENCE_DISABLED",
       });
       return;
@@ -137,7 +137,7 @@ module.exports = async function handler(req, res) {
       return;
     }
 
-    sendJson(res, 405, { error: "Metodo nao permitido." });
+    sendJson(res, 405, { error: "Método não permitido." });
   } catch (error) {
     console.error("Erro em /api/state:", error);
     sendJson(res, 500, { error: "Falha ao processar persistencia." });

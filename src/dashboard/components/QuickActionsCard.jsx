@@ -1,4 +1,4 @@
-import { FileText, Plus, RefreshCcw, TrendingUp, Users, BarChart3 } from "lucide-react";
+import { FileText, Plus, RefreshCcw, TrendingUp, Users } from "lucide-react";
 
 function QuickAction({ icon: Icon, label, onClick, tone = "info" }) {
   const toneClass =
@@ -23,7 +23,6 @@ export default function QuickActionsCard({ onNavigate }) {
       <QuickAction icon={RefreshCcw} label="Nova recorrente" onClick={() => onNavigate("contas")} tone="income" />
       <QuickAction icon={TrendingUp} label="Investimento" onClick={() => onNavigate("investimentos")} />
       <QuickAction icon={Users} label="Nova pessoa" onClick={() => onNavigate("pessoas")} tone="success" />
-      <QuickAction icon={BarChart3} label="Relatorios" onClick={() => onNavigate("dashboard")} tone="danger" />
     </div>
   );
 }

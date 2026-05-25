@@ -31,7 +31,7 @@ export async function pushStateToServer(user, snapshot) {
 
   if (response.status === 404 || response.status === 503) {
     console.warn("[dashboard] Remote persistence unavailable while saving", { endpoint, status: response.status });
-    throw new Error("Persistencia remota indisponivel");
+    throw new Error("Persistência remota indisponível");
   }
 
   if (!response.ok) {

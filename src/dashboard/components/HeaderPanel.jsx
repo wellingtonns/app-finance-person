@@ -12,7 +12,7 @@ export default function HeaderPanel({
   onRefresh,
 }) {
   const userInitial = String(selectedPersonName || currentUser || "U").slice(0, 1).toUpperCase();
-  const isOffline = /indisponivel|desativada/i.test(syncStatus || "");
+  const isOffline = /indispon[ií]vel|desativada/i.test(syncStatus || "");
 
   return (
     <section className="premium-panel rounded-[22px] p-4 sm:p-5">
@@ -30,7 +30,7 @@ export default function HeaderPanel({
       <div className="mb-5 flex flex-col gap-3 border-b border-white/10 pb-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0">
           <h1 className="font-display text-2xl font-bold leading-tight text-white sm:text-[2rem]">
-            Ola, {selectedPersonName || currentUser || "usuario"}
+            Olá, {selectedPersonName || currentUser || "usuário"}
           </h1>
           <p className="mt-1 text-sm text-copy/70">{title}</p>
         </div>
@@ -42,7 +42,7 @@ export default function HeaderPanel({
             }`}
           >
             <span className={`h-2 w-2 rounded-full ${isOffline ? "bg-income" : "bg-success"}`} />
-            {isOffline ? "Offline local" : "Sincronizacao ativa"}
+            {isOffline ? "Offline local" : "Sincronização ativa"}
           </span>
           <button
             type="button"
@@ -57,7 +57,7 @@ export default function HeaderPanel({
               {userInitial}
             </span>
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-white">{currentUser || "usuario"}</p>
+              <p className="truncate text-sm font-semibold text-white">{currentUser || "usuário"}</p>
               <p className="truncate text-xs text-copy/60">Pessoa ativa</p>
             </div>
             <UserRound className="h-4 w-4 text-copy/55" />

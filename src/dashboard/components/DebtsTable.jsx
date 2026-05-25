@@ -163,7 +163,7 @@ export default function DebtsTable({
     console.log("[dashboard] Debt save clicked", payload);
     if (!payload.name || !payload.personId || !Number.isFinite(payload.value) || payload.value <= 0) {
       console.warn("[dashboard] Invalid debt payload", payload);
-      onNotify?.("Preencha pessoa, conta e valor valido para salvar.");
+      onNotify?.("Preencha pessoa, conta e valor válido para salvar.");
       return;
     }
 
@@ -232,7 +232,7 @@ export default function DebtsTable({
               className="inline-flex min-h-11 items-center gap-2 rounded-2xl border border-white/10 bg-[#0b1220] px-4 py-3 text-sm text-copy/80"
             >
               <CalendarDays className="h-4 w-4 text-info" />
-              {monthFilter || "Mes"}
+              {monthFilter || "Mês"}
             </button>
 
             <div className="flex items-center justify-end text-sm text-copy/65">

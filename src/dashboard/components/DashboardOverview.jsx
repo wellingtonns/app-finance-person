@@ -54,11 +54,11 @@ export default function DashboardOverview({
   return (
     <>
       <section className="grid gap-4 xl:grid-cols-2 2xl:grid-cols-[1.35fr_0.95fr_0.85fr]">
-        <Panel title="Resumo do mes" action={month}>
+        <Panel title="Resumo do mês" action={month}>
           <DashboardChart income={incomeTotal} debts={paidDebtTotal + openDebtTotal} balance={projectedBalance} />
         </Panel>
 
-        <Panel title="Gastos por categoria" action="Mes atual">
+        <Panel title="Gastos por categoria" action="Mês atual">
           <CategoryChart categories={categories} />
         </Panel>
 
@@ -78,11 +78,11 @@ export default function DashboardOverview({
           <UpcomingBillsCard rows={todayDebts} emptyMessage="Nenhuma conta vence hoje no filtro atual." />
         </Panel>
 
-        <Panel title="Contas proximas do vencimento" action={<button type="button" onClick={() => onNavigate("contas")}>Ver todas</button>}>
-          <UpcomingBillsCard rows={soonDebts} emptyMessage="Nenhuma proxima conta aberta no filtro atual." />
+        <Panel title="Contas próximas do vencimento" action={<button type="button" onClick={() => onNavigate("contas")}>Ver todas</button>}>
+          <UpcomingBillsCard rows={soonDebts} emptyMessage="Nenhuma próxima conta aberta no filtro atual." />
         </Panel>
 
-        <Panel title="Atalhos rapidos">
+        <Panel title="Atalhos rápidos">
           <QuickActionsCard onNavigate={onNavigate} />
         </Panel>
       </section>

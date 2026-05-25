@@ -74,7 +74,7 @@ function bootstrapAuth() {
       const payload = await response.json().catch(() => ({}));
 
       if (!response.ok || !payload.ok) {
-        status.textContent = payload.error || "Usuario ou senha invalidos.";
+        status.textContent = payload.error || "Usuário ou senha inválidos.";
         return;
       }
 
@@ -82,13 +82,13 @@ function bootstrapAuth() {
       status.textContent = "Login realizado. Abrindo dashboard...";
       goDashboard();
     } catch {
-      status.textContent = "Nao foi possivel validar o login agora.";
+      status.textContent = "Não foi possível validar o login agora.";
       return;
     }
   });
 
   ssoButton?.addEventListener("click", () => {
-    status.textContent = "SSO ainda nao esta configurado para este ambiente.";
+    status.textContent = "SSO ainda não está configurado para este ambiente.";
   });
 }
 

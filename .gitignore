@@ -10,3 +10,4 @@ Thumbs.db
 
 # Build/runtime
 node_modules/
+api/auth-users.local.json

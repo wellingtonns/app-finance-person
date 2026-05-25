@@ -83,7 +83,7 @@ export default function RecurringBillsPanel({
       repeatMonths: Number(form.repeatMonths),
     };
     if (!payload.personId || !payload.name || !Number.isFinite(payload.value) || payload.value <= 0) {
-      onNotify?.("Preencha pessoa, nome e valor valido para a conta recorrente.");
+      onNotify?.("Preencha pessoa, nome e valor válido para a conta recorrente.");
       return;
     }
     if (!Number.isFinite(payload.repeatMonths) || payload.repeatMonths < 1) {
@@ -95,7 +95,7 @@ export default function RecurringBillsPanel({
       onNotify?.(`Conta recorrente "${payload.name}" atualizada.`);
     } else {
       onAdd(payload);
-      onNotify?.(`Conta recorrente "${payload.name}" cadastrada e gerada por ${payload.repeatMonths} mes(es).`);
+      onNotify?.(`Conta recorrente "${payload.name}" cadastrada e gerada por ${payload.repeatMonths} mês(es).`);
     }
     closeModal();
   }
@@ -106,7 +106,7 @@ export default function RecurringBillsPanel({
         <div>
           <h3 className="font-display text-[1.9rem] font-bold text-white">Contas recorrentes</h3>
           <p className="mt-1 text-base text-copy/78">
-            Contas fixas cadastradas ficam aqui. Ao adicionar, os meses escolhidos sao criados automaticamente.
+            Contas fixas cadastradas ficam aqui. Ao adicionar, os meses escolhidos são criados automaticamente.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -131,7 +131,7 @@ export default function RecurringBillsPanel({
             <strong className="text-white">{row.name}</strong>
             <span>{row.category}</span>
             <span>Dia {row.dueDay}</span>
-            <span>{row.repeatMonths || 1} mes(es)</span>
+            <span>{row.repeatMonths || 1} mês(es)</span>
             <span className={row.active ? "text-success" : "text-copy/55"}>{row.active ? "Ativa" : "Pausada"}</span>
             <div className="flex gap-2 lg:justify-end">
               <button type="button" onClick={() => openEditModal(row)} className="inline-flex rounded-xl border border-white/10 bg-white/5 p-2 text-copy/70" aria-label={`Editar ${row.name}`}>
@@ -188,7 +188,7 @@ export default function RecurringBillsPanel({
                   <input
                     value={form.name}
                     onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-                    placeholder="Ex: Aluguel, Internet, Cartao"
+                    placeholder="Ex: Aluguel, Internet, Cartão"
                     className="field-control"
                   />
                 </label>
@@ -222,7 +222,7 @@ export default function RecurringBillsPanel({
                   />
                 </label>
                 <label className="grid gap-2 text-xs uppercase tracking-[0.14em] text-copy/55">
-                  Mes inicial
+                  Mês inicial
                   <input
                     type="month"
                     value={form.startMonth}

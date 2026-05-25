@@ -26,7 +26,7 @@ export default function AlertsCard({ lateCount, soonCount, lateDebtTotal, openDe
     <div className="grid gap-3">
       <AlertRow icon={CircleAlert} title={`${lateCount} contas em atraso`} subtitle={`Total: ${formatCurrency(lateDebtTotal)}`} />
       <AlertRow icon={CalendarClock} title={`${soonCount} contas abertas`} subtitle={`A pagar: ${formatCurrency(openDebtTotal)}`} tone="warning" />
-      <AlertRow icon={RefreshCcw} title="Sincronizacao" subtitle={syncStatus} tone="sync" />
+      <AlertRow icon={RefreshCcw} title="Sincronização" subtitle={syncStatus} tone="sync" />
     </div>
   );
 }
