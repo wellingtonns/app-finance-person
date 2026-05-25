@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import {
   BadgeDollarSign,
-  BarChart3,
   BriefcaseBusiness,
   CircleDollarSign,
   Home,
@@ -24,7 +23,6 @@ const navItems = [
   { key: "capital", label: "Lazer", icon: SmilePlus },
   { key: "investimentos", label: "Investimentos", icon: BadgeDollarSign },
   { key: "pessoas", label: "Pessoas", icon: Users },
-  { key: "dashboard", label: "Relatorios", icon: BarChart3 },
 ];
 
 function NavButton({ icon: Icon, label, active, onClick }) {
